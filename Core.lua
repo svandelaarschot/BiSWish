@@ -10,7 +10,8 @@ BiSWishAddonDB = BiSWishAddonDB or {
     options = {
         autoOpenOnBossKill = true,
         guildRaidThreshold = 0.8,
-        guildRaidTeamName = ""
+        guildRaidTeamName = "",
+        autoCloseTime = 30
     },
     version = 1
 }

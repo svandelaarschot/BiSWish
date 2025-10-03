@@ -99,6 +99,7 @@ end
 -- Check loot for wanted items
 function ns.Events.CheckLootForWantedItems()
     local numLootItems = GetNumLootItems()
+    local wantedItems = {}
     
     for i = 1, numLootItems do
         local itemLink = GetLootSlotLink(i)
@@ -117,9 +118,19 @@ function ns.Events.CheckLootForWantedItems()
                 
                 if #interestedPlayers > 0 then
                     print("|cff39FF14BiSWishAddon|r: Found wanted item: " .. itemName)
-                    ns.UI.ShowItemDropPopup(itemName, itemLink, interestedPlayers)
+                    table.insert(wantedItems, {
+                        name = itemName,
+                        link = itemLink,
+                        players = interestedPlayers
+                    })
                 end
             end
         end
+    end
+    
+    -- Show popup if any wanted items found
+    if #wantedItems > 0 then
+        print("|cff39FF14BiSWishAddon|r: Found " .. #wantedItems .. " wanted items!")
+        ns.UI.ShowItemDropPopup(wantedItems)
     end
 end

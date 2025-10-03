@@ -128,12 +128,36 @@ function ns.CreateGeneralPanel()
         print("|cff39FF14BiSWishAddon|r: Guild name saved on focus lost: '" .. (self:GetText() or "") .. "'")
     end)
     
+    -- Auto-close time setting
+    local autoCloseLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    autoCloseLabel:SetPoint("TOPLEFT", guildNameEditBox, "BOTTOMLEFT", 0, -30)
+    autoCloseLabel:SetText("Auto-close time (seconds):")
+    
+    local autoCloseEditBox = CreateFrame("EditBox", nil, panel, "InputBoxTemplate")
+    autoCloseEditBox:SetPoint("TOPLEFT", autoCloseLabel, "BOTTOMLEFT", 0, -10)
+    autoCloseEditBox:SetSize(100, 30)
+    autoCloseEditBox:SetAutoFocus(false)
+    autoCloseEditBox:SetText(tostring(BiSWishAddonDB.options.autoCloseTime or 30))
+    
+    autoCloseEditBox:SetScript("OnTextChanged", function(self)
+        local value = tonumber(self:GetText())
+        if value and value > 0 then
+            if not BiSWishAddonDB.options then BiSWishAddonDB.options = {} end
+            BiSWishAddonDB.options.autoCloseTime = value
+        end
+    end)
+    
     -- Panel OnShow script to initialize values
     panel:SetScript("OnShow", function()
         -- Initialize guild name editbox
         local currentGuildName = (BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName) or ""
         guildNameEditBox:SetText(currentGuildName)
         print("|cff39FF14BiSWishAddon|r: OnShow - Loading guild name: '" .. currentGuildName .. "'")
+        
+        -- Initialize auto-close time editbox
+        local currentAutoCloseTime = (BiSWishAddonDB.options and BiSWishAddonDB.options.autoCloseTime) or 30
+        autoCloseEditBox:SetText(tostring(currentAutoCloseTime))
+        print("|cff39FF14BiSWishAddon|r: OnShow - Loading auto-close time: " .. currentAutoCloseTime .. " seconds")
         
         -- Force update the BiS List dialog if it exists
         if ns.UI.biSListDialog and ns.UI.biSListDialog.guildName then

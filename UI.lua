@@ -766,10 +766,10 @@ function ns.UI.CreateBiSListDialog()
     
     local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", 20, -140)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -40, 100)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -60, 100)
     
     local content = CreateFrame("Frame")
-     content:SetSize(750, 1)
+     content:SetSize(720, 1)
     scrollFrame:SetScrollChild(content)
     
     frame.scrollFrame = scrollFrame
@@ -813,7 +813,7 @@ function ns.UI.UpdateBiSListContent()
     local content = frame.content
     
      content:Show()
-     content:SetSize(750, 1)
+     content:SetSize(720, 1)
 
     ClearChildren(content)
     
@@ -834,7 +834,7 @@ function ns.UI.UpdateBiSListContent()
 
     for itemID, data in pairs(BiSWishAddonDB.items) do
         local itemFrame = CreateFrame("Frame", nil, content)
-         itemFrame:SetSize(730, 30)
+         itemFrame:SetSize(700, 30)
         itemFrame:SetPoint("TOPLEFT", 10, yOffset)
         
         local itemIcon = itemFrame:CreateTexture(nil, "OVERLAY")
@@ -967,7 +967,7 @@ function ns.UI.FilterBiSList(searchText)
     local content = frame.content
     
     content:Show()
-    content:SetSize(750, 1)
+    content:SetSize(720, 1)
     ClearChildren(content)
     
     local yOffset = -10
@@ -997,7 +997,7 @@ function ns.UI.FilterBiSList(searchText)
         
         if showItem then
             local itemFrame = CreateFrame("Frame", nil, content)
-            itemFrame:SetSize(730, 30)
+            itemFrame:SetSize(700, 30)
             itemFrame:SetPoint("TOPLEFT", 10, yOffset)
             
             local rowBg = itemFrame:CreateTexture(nil, "BACKGROUND")
@@ -1515,23 +1515,195 @@ end
 
 -- Test item drop popup
 function ns.UI.TestItemDropPopup()
-    -- Simulate a dropped item
-    local testItemName = "Brand of Ceaseless Ire"
-    local testItemLink = "|cffa335ee|Hitem:242401::::::::80:::::::|h[Brand of Ceaseless Ire]|h|r"
-    local testPlayers = {"Player1", "Player2", "Player3"}
+    -- Simulate multiple dropped items
+    local testItems = {
+        {
+            name = "Brand of Ceaseless Ire",
+            link = "|cffa335ee|Hitem:242401::::::::80:::::::|h[Brand of Ceaseless Ire]|h|r",
+            players = {"Player1", "Player2", "Player3"}
+        },
+        {
+            name = "Astral Antenna",
+            link = "|cffa335ee|Hitem:242395::::::::80:::::::|h[Astral Antenna]|h|r",
+            players = {"Player4", "Player5"}
+        },
+        {
+            name = "Voidglass Spire",
+            link = "|cffa335ee|Hitem:237730::::::::80:::::::|h[Voidglass Spire]|h|r",
+            players = {"Player6", "Player7", "Player8", "Player9"}
+        }
+    }
     
-    print("|cff39FF14BiSWishAddon|r: Testing item drop popup for: " .. testItemName)
-    ns.UI.ShowItemDropPopup(testItemName, testItemLink, testPlayers)
+    print("|cff39FF14BiSWishAddon|r: Testing item drop popup for " .. #testItems .. " items")
+    ns.UI.ShowItemDropPopup(testItems)
 end
 
--- Show item drop popup
-function ns.UI.ShowItemDropPopup(itemName, itemLink, interestedPlayers)
+-- Show item drop popup for multiple items
+function ns.UI.ShowItemDropPopup(items)
     if ns.UI.itemDropPopup then
         ns.UI.itemDropPopup:Hide()
     end
     
     local frame = CreateFrame("Frame", "BiSWishAddon_ItemDropPopup", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(400, 250)
+    frame:SetSize(350, 180)
+    frame:SetPoint("CENTER")
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    frame:SetFrameStrata("FULLSCREEN_DIALOG")
+    frame:SetToplevel(true)
+    
+    if frame.TitleText then
+        frame.TitleText:SetText("|cff39FF14Items Dropped!|r")
+    else
+        local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        title:SetPoint("TOP", 0, -10)
+        title:SetText("|cff39FF14Items Dropped!|r")
+        title:SetJustifyH("CENTER")
+        title:SetWidth(320)
+        title:SetWordWrap(true)
+    end
+    
+    -- Scroll frame for items list
+    local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetSize(300, 100)
+    scrollFrame:SetPoint("TOP", 0, -40)
+    
+    -- Items content frame
+    local itemsContent = CreateFrame("Frame", nil, scrollFrame)
+    itemsContent:SetSize(300, 1)
+    scrollFrame:SetScrollChild(itemsContent)
+    
+    local yOffset = -10
+    local itemCount = 0
+    
+    for _, itemData in ipairs(items) do
+        local itemName = itemData.name
+        local itemLink = itemData.link
+        local interestedPlayers = itemData.players
+        
+        if itemName and #interestedPlayers > 0 then
+            itemCount = itemCount + 1
+            
+            -- Item container
+            local itemContainer = CreateFrame("Frame", nil, itemsContent)
+            itemContainer:SetSize(300, 35)
+            itemContainer:SetPoint("TOPLEFT", 10, yOffset)
+            
+            -- Item icon
+            local itemIcon = itemContainer:CreateTexture(nil, "OVERLAY")
+            itemIcon:SetSize(28, 28)
+            itemIcon:SetPoint("LEFT", 10, 0)
+            
+            -- Try to get item icon
+            local itemID = nil
+            local icon = nil
+            
+            -- First try to get itemID from itemLink if available
+            if itemLink then
+                itemID = tonumber(string.match(itemLink, "item:(%d+)"))
+            end
+            
+            -- Try to get icon by itemID first
+            if itemID then
+                local _, _, _, _, _, _, _, _, _, itemIcon = GetItemInfo(itemID)
+                if itemIcon then
+                    icon = itemIcon
+                end
+            end
+            
+            -- Fallback to item name
+            if not icon then
+                local _, _, _, _, _, _, _, _, _, itemIcon = GetItemInfo(itemName)
+                if itemIcon then
+                    icon = itemIcon
+                end
+            end
+            
+            -- Set the icon
+            if icon then
+                itemIcon:SetTexture(icon)
+            else
+                itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+            end
+            
+            -- Item info
+            local itemInfo = itemContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            itemInfo:SetPoint("LEFT", itemIcon, "RIGHT", 12, 0)
+            itemInfo:SetJustifyH("LEFT")
+            itemInfo:SetWidth(200)
+            itemInfo:SetWordWrap(true)
+            itemInfo:SetText("|cffFFD700" .. itemName .. "|r")
+            
+            -- Players count
+            local playersCount = itemContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            playersCount:SetPoint("RIGHT", -10, 0)
+            playersCount:SetJustifyH("RIGHT")
+            playersCount:SetWidth(60)
+            playersCount:SetText("|cff39FF14" .. #interestedPlayers .. "|r")
+            
+            -- Add tooltip to player count
+            playersCount:SetScript("OnEnter", function(self)
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetText("Interested Players:", 1, 1, 1)
+                for i, playerName in ipairs(interestedPlayers) do
+                    GameTooltip:AddLine("• " .. playerName, 1, 1, 1)
+                end
+                GameTooltip:Show()
+            end)
+            
+            playersCount:SetScript("OnLeave", function(self)
+                GameTooltip:Hide()
+            end)
+            
+            -- Add tooltip to icon
+            itemIcon:SetScript("OnEnter", function(self)
+                if itemLink then
+                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                    GameTooltip:SetHyperlink(itemLink)
+                    GameTooltip:Show()
+                end
+            end)
+            
+            itemIcon:SetScript("OnLeave", function(self)
+                GameTooltip:Hide()
+            end)
+            
+            yOffset = yOffset - 40
+        end
+    end
+    
+    -- Update scroll frame
+    itemsContent:SetSize(300, math.max(100, itemCount * 40 + 20))
+    scrollFrame:UpdateScrollChildRect()
+    
+    -- No close button - auto-close only
+    
+    -- Auto-close after 30 seconds (configurable)
+    local autoCloseTime = BiSWishAddonDB.options.autoCloseTime or 30
+    C_Timer.After(autoCloseTime, function()
+        if frame and frame:IsVisible() then
+            frame:Hide()
+        end
+    end)
+    
+    -- Footer
+    ns.UI.CreateFooter(frame)
+    
+    frame:Show()
+    ns.UI.itemDropPopup = frame
+end
+
+-- Legacy function for single item (backward compatibility)
+function ns.UI.ShowItemDropPopupLegacy(itemName, itemLink, interestedPlayers)
+    if ns.UI.itemDropPopup then
+        ns.UI.itemDropPopup:Hide()
+    end
+    
+    local frame = CreateFrame("Frame", "BiSWishAddon_ItemDropPopup", UIParent, "BasicFrameTemplateWithInset")
+    frame:SetSize(350, 180)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -1548,59 +1720,103 @@ function ns.UI.ShowItemDropPopup(itemName, itemLink, interestedPlayers)
         title:SetPoint("TOP", 0, -10)
         title:SetText("|cff39FF14Item Dropped!|r")
         title:SetJustifyH("CENTER")
-        title:SetWidth(350)
+        title:SetWidth(320)
         title:SetWordWrap(true)
     end
     
+    -- Item container for centering
+    local itemContainer = CreateFrame("Frame", nil, frame)
+    itemContainer:SetSize(320, 35)
+    itemContainer:SetPoint("TOP", 0, -40)
+    
     -- Item icon
-    local itemIcon = frame:CreateTexture(nil, "OVERLAY")
-    itemIcon:SetSize(32, 32)
-    itemIcon:SetPoint("TOP", 0, -40)
+    local itemIcon = itemContainer:CreateTexture(nil, "OVERLAY")
+    itemIcon:SetSize(28, 28)
+    itemIcon:SetPoint("LEFT", 10, 0)
     
     -- Try to get item icon
-    local _, _, _, _, _, _, _, _, _, icon = GetItemInfo(itemName)
+    local itemID = nil
+    local icon = nil
+    
+    -- First try to get itemID from itemLink if available
+    if itemLink then
+        itemID = tonumber(string.match(itemLink, "item:(%d+)"))
+    end
+    
+    -- Try to get icon by itemID first
+    if itemID then
+        local _, _, _, _, _, _, _, _, _, itemIcon = GetItemInfo(itemID)
+        if itemIcon then
+            icon = itemIcon
+        end
+    end
+    
+    -- Fallback to item name
+    if not icon then
+        local _, _, _, _, _, _, _, _, _, itemIcon = GetItemInfo(itemName)
+        if itemIcon then
+            icon = itemIcon
+        end
+    end
+    
+    -- Set the icon
     if icon then
         itemIcon:SetTexture(icon)
+        print("|cff39FF14BiSWishAddon|r: Item icon loaded: " .. icon)
     else
         itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+        print("|cff39FF14BiSWishAddon|r: Using fallback icon for: " .. itemName)
     end
     
     -- Item info
-    local itemInfo = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    itemInfo:SetPoint("LEFT", itemIcon, "RIGHT", 10, 0)
+    local itemInfo = itemContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    itemInfo:SetPoint("LEFT", itemIcon, "RIGHT", 12, 0)
     itemInfo:SetJustifyH("LEFT")
-    itemInfo:SetWidth(300)
+    itemInfo:SetWidth(260)
     itemInfo:SetWordWrap(true)
     itemInfo:SetText("|cffFFD700" .. itemName .. "|r")
     
+    -- Add tooltip to icon
+    itemIcon:SetScript("OnEnter", function(self)
+        if itemLink then
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetHyperlink(itemLink)
+            GameTooltip:Show()
+        end
+    end)
+    
+    itemIcon:SetScript("OnLeave", function(self)
+        GameTooltip:Hide()
+    end)
+    
     -- Interested players label
     local playersLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    playersLabel:SetPoint("TOP", itemInfo, "BOTTOM", 0, -20)
+    playersLabel:SetPoint("TOP", itemContainer, "BOTTOM", 0, -8)
     playersLabel:SetText("|cff39FF14Interested Players:|r")
     playersLabel:SetJustifyH("CENTER")
-    playersLabel:SetWidth(350)
+    playersLabel:SetWidth(320)
     
     -- Scroll frame for players list
     local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetSize(350, 80)
-    scrollFrame:SetPoint("TOP", playersLabel, "BOTTOM", 0, -5)
+    scrollFrame:SetSize(300, 60)
+    scrollFrame:SetPoint("TOP", playersLabel, "BOTTOM", 0, -3)
     
     -- Players content frame
     local playersContent = CreateFrame("Frame", nil, scrollFrame)
-    playersContent:SetSize(330, 1)
+    playersContent:SetSize(280, 1)
     scrollFrame:SetScrollChild(playersContent)
     
     -- Players list
     local playersText = table.concat(interestedPlayers, ", ")
     local playersList = playersContent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    playersList:SetPoint("TOPLEFT", 0, 0)
+    playersList:SetPoint("TOPLEFT", 10, 0)
     playersList:SetJustifyH("LEFT")
-    playersList:SetWidth(330)
+    playersList:SetWidth(260)
     playersList:SetWordWrap(true)
     playersList:SetText(playersText)
     
     -- Update scroll frame
-    playersContent:SetSize(330, playersList:GetStringHeight())
+    playersContent:SetSize(280, playersList:GetStringHeight() + 5)
     scrollFrame:UpdateScrollChildRect()
     
     -- Close button
