@@ -1472,12 +1472,12 @@ function ns.UI.ShowCSVImportDialog()
     end)
     scrollFrame:SetScrollChild(textEditBox)
 
-    -- Import Button
-    local importButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    importButton:SetSize(100, 30)
-    importButton:SetPoint("BOTTOMRIGHT", -20, 20)
-    importButton:SetText("Import")
-    importButton:SetScript("OnClick", function()
+    -- Import Players Button
+    local importPlayersButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    importPlayersButton:SetSize(120, 30)
+    importPlayersButton:SetPoint("BOTTOMRIGHT", -20, 20)
+    importPlayersButton:SetText("Import Players")
+    importPlayersButton:SetScript("OnClick", function()
         local data = textEditBox:GetText()
         if data and data ~= "" then
             ns.UI.ProcessCSVImport(data)
@@ -1490,7 +1490,7 @@ function ns.UI.ShowCSVImportDialog()
     -- Import Loot Items Button
     local importLootButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
     importLootButton:SetSize(120, 30)
-    importLootButton:SetPoint("RIGHT", importButton, "LEFT", -10, 0)
+    importLootButton:SetPoint("RIGHT", importPlayersButton, "LEFT", -10, 0)
     importLootButton:SetText("Import Loot")
     importLootButton:SetScript("OnClick", function()
         local data = textEditBox:GetText()
@@ -1501,16 +1501,31 @@ function ns.UI.ShowCSVImportDialog()
             print("|cffFF0000BiSWishAddon|r: No data to import!")
         end
     end)
+    
+    -- Link Players to Loot Button
+    local linkButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    linkButton:SetSize(120, 30)
+    linkButton:SetPoint("RIGHT", importLootButton, "LEFT", -10, 0)
+    linkButton:SetText("Link Players")
+    linkButton:SetScript("OnClick", function()
+        local data = textEditBox:GetText()
+        if data and data ~= "" then
+            ns.UI.ProcessPlayerLootLink(data)
+            frame:Hide()
+        else
+            print("|cffFF0000BiSWishAddon|r: No data to link!")
+        end
+    end)
 
     -- Cancel Button
     local cancelButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
     cancelButton:SetSize(100, 30)
-    cancelButton:SetPoint("RIGHT", importButton, "LEFT", -10, 0)
+    cancelButton:SetPoint("RIGHT", linkButton, "LEFT", -10, 0)
     cancelButton:SetText("Cancel")
     cancelButton:SetScript("OnClick", function()
         frame:Hide()
     end)
-
+    
     -- Clear Button
     local clearButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
     clearButton:SetSize(80, 30)
@@ -1519,8 +1534,160 @@ function ns.UI.ShowCSVImportDialog()
     clearButton:SetScript("OnClick", function()
         textEditBox:SetText("")
     end)
+    
+    -- Footer
+    ns.UI.CreateFooter(frame)
 
     ns.UI.csvImportDialog = frame
+end
+
+-- Test item drop popup
+function ns.UI.TestItemDropPopup()
+    -- Simulate a dropped item
+    local testItemName = "Brand of Ceaseless Ire"
+    local testItemLink = "|cffa335ee|Hitem:242401::::::::80:::::::|h[Brand of Ceaseless Ire]|h|r"
+    local testPlayers = {"Player1", "Player2", "Player3"}
+    
+    ns.UI.ShowItemDropPopup(testItemName, testItemLink, testPlayers)
+end
+
+-- Show item drop popup
+function ns.UI.ShowItemDropPopup(itemName, itemLink, interestedPlayers)
+    if ns.UI.itemDropPopup then
+        ns.UI.itemDropPopup:Hide()
+    end
+    
+    local frame = CreateFrame("Frame", "BiSWishAddon_ItemDropPopup", UIParent, "BasicFrameTemplateWithInset")
+    frame:SetSize(500, 300)
+    frame:SetPoint("CENTER")
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    frame:SetFrameStrata("FULLSCREEN_DIALOG")
+    frame:SetToplevel(true)
+    
+    if frame.TitleText then
+        frame.TitleText:SetText("|cff39FF14Item Dropped!|r")
+    else
+        local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        title:SetPoint("TOP", 0, -10)
+        title:SetText("|cff39FF14Item Dropped!|r")
+        title:SetJustifyH("CENTER")
+        title:SetWidth(450)
+        title:SetWordWrap(true)
+    end
+    
+    -- Item info
+    local itemInfo = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    itemInfo:SetPoint("TOP", 0, -40)
+    itemInfo:SetJustifyH("CENTER")
+    itemInfo:SetWidth(450)
+    itemInfo:SetWordWrap(true)
+    itemInfo:SetText("|cffFFD700" .. itemName .. "|r")
+    
+    -- Interested players label
+    local playersLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    playersLabel:SetPoint("TOP", itemInfo, "BOTTOM", 0, -20)
+    playersLabel:SetText("|cff39FF14Interested Players:|r")
+    playersLabel:SetJustifyH("LEFT")
+    playersLabel:SetWidth(450)
+    
+    -- Players list
+    local playersText = table.concat(interestedPlayers, ", ")
+    local playersList = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    playersList:SetPoint("TOP", playersLabel, "BOTTOM", 0, -5)
+    playersList:SetJustifyH("LEFT")
+    playersList:SetWidth(450)
+    playersList:SetWordWrap(true)
+    playersList:SetText(playersText)
+    
+    -- Close button
+    local closeButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    closeButton:SetSize(100, 30)
+    closeButton:SetPoint("BOTTOM", 0, 20)
+    closeButton:SetText("Close")
+    closeButton:SetScript("OnClick", function()
+        frame:Hide()
+    end)
+    
+    -- Auto-close after 10 seconds
+    C_Timer.After(10, function()
+        if frame and frame:IsVisible() then
+            frame:Hide()
+        end
+    end)
+    
+    -- Footer
+    ns.UI.CreateFooter(frame)
+    
+    frame:Show()
+    ns.UI.itemDropPopup = frame
+end
+
+-- Process Player-Loot Link (Player, Item Name, Item Name, ... format)
+function ns.UI.ProcessPlayerLootLink(data)
+    local lines = {}
+    for line in data:gmatch("[^\r\n]+") do
+        table.insert(lines, line)
+    end
+
+    local linkedCount = 0
+
+    -- Skip header line
+    for i = 2, #lines do
+        local line = lines[i]
+        if line and line ~= "" then
+            local parts = {}
+            for part in line:gmatch("[^,]+") do
+                table.insert(parts, Trim(part))
+            end
+
+            if #parts >= 2 then
+                local playerName = parts[1]
+                local items = {}
+                
+                -- Get all items for this player (skip first column which is player name)
+                for j = 2, #parts do
+                    local itemName = Trim(parts[j])
+                    if itemName and itemName ~= "" and itemName ~= "Leeg" then
+                        table.insert(items, itemName)
+                    end
+                end
+                
+                -- Link each item to this player
+                for _, itemName in ipairs(items) do
+                    -- Find existing item by name
+                    for itemID, itemData in pairs(BiSWishAddonDB.items) do
+                        if itemData.name == itemName then
+                            -- Add player to item if not already present
+                            local playerExists = false
+                            for _, existingPlayer in ipairs(itemData.players) do
+                                if existingPlayer == playerName then
+                                    playerExists = true
+                                    break
+                                end
+                            end
+                            
+                            if not playerExists then
+                                table.insert(itemData.players, playerName)
+                                linkedCount = linkedCount + 1
+                            end
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    print("|cff39FF14BiSWishAddon|r: Linked " .. linkedCount .. " player-item connections!")
+
+    -- Refresh the data window
+    if ns.UI.dataWindow then
+        ns.UI.UpdateDataWindowContent()
+    end
 end
 
 -- Process Loot Import (Item ID, Item Name, Players format)

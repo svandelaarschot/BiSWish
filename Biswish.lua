@@ -135,6 +135,18 @@ function ns.CreateGeneralPanel()
         guildNameEditBox:SetText(currentGuildName)
         print("|cff39FF14BiSWishAddon|r: OnShow - Loading guild name: '" .. currentGuildName .. "'")
         
+        -- Force update the BiS List dialog if it exists
+        if ns.UI.biSListDialog and ns.UI.biSListDialog.guildName then
+            if currentGuildName and currentGuildName ~= "" then
+                ns.UI.biSListDialog.guildName:SetText("|cff39FF14Guild/Raid Team:|r " .. currentGuildName)
+                ns.UI.biSListDialog.guildName:Show()
+                print("|cff39FF14BiSWishAddon|r: Updated BiS List guild name: " .. currentGuildName)
+            else
+                ns.UI.biSListDialog.guildName:Hide()
+                print("|cff39FF14BiSWishAddon|r: Hiding BiS List guild name (empty)")
+            end
+        end
+        
         -- Initialize auto-open checkbox
         autoOpenGuildCheck:SetChecked(BiSWishAddonDB.options and BiSWishAddonDB.options.autoOpenOnBossKill or false)
         

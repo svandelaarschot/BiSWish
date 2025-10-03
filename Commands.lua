@@ -59,6 +59,8 @@ function ns.Commands.HandleCommand(msg)
         ns.Commands.ShowBiSList()
     elseif command == "clear" then
         ns.Commands.ClearData()
+    elseif command == "testdrop" then
+        ns.Commands.TestItemDrop()
     else
         print("|cff39FF14BiSWishAddon|r: Unknown command. Type /bis help for available commands")
     end
@@ -76,6 +78,7 @@ function ns.Commands.ShowHelp()
     print("|cff00FF00/bis import <filename>|r - Import data from JSON file")
     print("|cff00FF00/bis options|r - Open options window")
     print("|cff00FF00/bis clear|r - Clear all data")
+    print("|cff00FF00/bis testdrop|r - Test item drop popup")
     print("|cff00FF00/bis help|r - Show this help")
 end
 
@@ -197,6 +200,12 @@ end
 function ns.Commands.ClearData()
     BiSWishAddonDB.items = {}
     print("|cff39FF14BiSWishAddon|r: All data cleared")
+end
+
+-- Test item drop popup
+function ns.Commands.TestItemDrop()
+    print("|cff39FF14BiSWishAddon|r: Testing item drop popup...")
+    ns.UI.TestItemDropPopup()
 end
 
 -- String trim function

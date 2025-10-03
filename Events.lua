@@ -20,6 +20,8 @@ function ns.Events.RegisterEvents()
     frame:RegisterEvent("GROUP_ROSTER_UPDATE")
     frame:RegisterEvent("PLAYER_REGEN_DISABLED")
     frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    frame:RegisterEvent("LOOT_OPENED")
+    frame:RegisterEvent("LOOT_CLOSED")
     
     frame:SetScript("OnEvent", function(self, event, ...)
         ns.Events.HandleEvent(event, ...)
@@ -42,6 +44,10 @@ function ns.Events.HandleEvent(event, ...)
         ns.Events.OnPlayerRegenDisabled()
     elseif event == "PLAYER_REGEN_ENABLED" then
         ns.Events.OnPlayerRegenEnabled()
+    elseif event == "LOOT_OPENED" then
+        ns.Events.OnLootOpened()
+    elseif event == "LOOT_CLOSED" then
+        ns.Events.OnLootClosed()
     end
 end
 
@@ -77,5 +83,43 @@ function ns.Events.OnEncounterEnd(encounterID, encounterName, difficultyID, grou
         
         -- Check if we should auto-open BiS Wishlist for guild raids
         ns.UI.CheckBossKillAutoOpen()
+    end
+end
+
+function ns.Events.OnLootOpened()
+    print("|cff39FF14BiSWishAddon|r: Loot window opened!")
+    -- Check for items that players want
+    ns.Events.CheckLootForWantedItems()
+end
+
+function ns.Events.OnLootClosed()
+    print("|cff39FF14BiSWishAddon|r: Loot window closed!")
+end
+
+-- Check loot for wanted items
+function ns.Events.CheckLootForWantedItems()
+    local numLootItems = GetNumLootItems()
+    
+    for i = 1, numLootItems do
+        local itemLink = GetLootSlotLink(i)
+        if itemLink then
+            local itemName = GetItemInfo(itemLink)
+            if itemName then
+                -- Check if any players want this item
+                local interestedPlayers = {}
+                for itemID, itemData in pairs(BiSWishAddonDB.items) do
+                    if itemData.name == itemName then
+                        for _, playerName in ipairs(itemData.players) do
+                            table.insert(interestedPlayers, playerName)
+                        end
+                    end
+                end
+                
+                if #interestedPlayers > 0 then
+                    print("|cff39FF14BiSWishAddon|r: Found wanted item: " .. itemName)
+                    ns.UI.ShowItemDropPopup(itemName, itemLink, interestedPlayers)
+                end
+            end
+        end
     end
 end
