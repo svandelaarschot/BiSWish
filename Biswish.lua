@@ -111,18 +111,37 @@ function ns.CreateGeneralPanel()
     local guildNameEditBox = CreateFrame("EditBox", nil, panel, "InputBoxTemplate")
     guildNameEditBox:SetPoint("TOPLEFT", guildNameLabel, "BOTTOMLEFT", 0, -10)
     guildNameEditBox:SetSize(300, 30)
-    guildNameEditBox:SetText(BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName or "")
     guildNameEditBox:SetAutoFocus(false)
+    
+    -- Initialize with empty value (will be set in OnShow)
+    guildNameEditBox:SetText("")
+    
     guildNameEditBox:SetScript("OnTextChanged", function(self)
         if not BiSWishAddonDB.options then BiSWishAddonDB.options = {} end
         BiSWishAddonDB.options.guildRaidTeamName = self:GetText()
-        print("|cff39FF14BiSWishAddon|r: Guild name saved: " .. (self:GetText() or ""))
+        print("|cff39FF14BiSWishAddon|r: Guild name changed: '" .. (self:GetText() or "") .. "'")
     end)
     
     guildNameEditBox:SetScript("OnEditFocusLost", function(self)
         if not BiSWishAddonDB.options then BiSWishAddonDB.options = {} end
         BiSWishAddonDB.options.guildRaidTeamName = self:GetText()
-        print("|cff39FF14BiSWishAddon|r: Guild name saved on focus lost: " .. (self:GetText() or ""))
+        print("|cff39FF14BiSWishAddon|r: Guild name saved on focus lost: '" .. (self:GetText() or "") .. "'")
+    end)
+    
+    -- Panel OnShow script to initialize values
+    panel:SetScript("OnShow", function()
+        -- Initialize guild name editbox
+        local currentGuildName = (BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName) or ""
+        guildNameEditBox:SetText(currentGuildName)
+        print("|cff39FF14BiSWishAddon|r: OnShow - Loading guild name: '" .. currentGuildName .. "'")
+        
+        -- Initialize auto-open checkbox
+        autoOpenGuildCheck:SetChecked(BiSWishAddonDB.options and BiSWishAddonDB.options.autoOpenOnBossKill or false)
+        
+        -- Initialize threshold slider
+        local threshold = (BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidThreshold) or 0.8
+        thresholdSlider:SetValue(threshold)
+        thresholdValue:SetText(tostring(math.floor(threshold * 100)) .. "%")
     end)
     
     return panel

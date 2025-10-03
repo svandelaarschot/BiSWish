@@ -82,6 +82,76 @@ end
 
 -- Public: Synchronous best-effort (kept for compatibility)
 -- item can be: itemID (number), itemLink (string), or itemName (string, cached)
+-- Hardcoded icon matching based on item name patterns
+function ns.UI.GetItemIconByName(itemName)
+    if not itemName then return nil end
+    
+    local name = string.lower(itemName)
+    
+    -- Weapon patterns
+    if string.find(name, "sword") or string.find(name, "blade") then
+        return "Interface\\Icons\\INV_Sword_01"
+    elseif string.find(name, "axe") then
+        return "Interface\\Icons\\INV_Axe_01"
+    elseif string.find(name, "mace") or string.find(name, "hammer") then
+        return "Interface\\Icons\\INV_Mace_01"
+    elseif string.find(name, "dagger") or string.find(name, "kris") then
+        return "Interface\\Icons\\INV_Weapon_ShortBlade_01"
+    elseif string.find(name, "staff") or string.find(name, "spire") then
+        return "Interface\\Icons\\INV_Staff_01"
+    elseif string.find(name, "bow") or string.find(name, "strandbow") then
+        return "Interface\\Icons\\INV_Weapon_Bow_01"
+    elseif string.find(name, "gun") or string.find(name, "rifle") then
+        return "Interface\\Icons\\INV_Weapon_Rifle_01"
+    elseif string.find(name, "wand") then
+        return "Interface\\Icons\\INV_Wand_01"
+    elseif string.find(name, "shield") then
+        return "Interface\\Icons\\INV_Shield_01"
+    
+    -- Trinket patterns
+    elseif string.find(name, "trinket") or string.find(name, "antenna") or string.find(name, "core") or string.find(name, "forge") or string.find(name, "silk") or string.find(name, "command") or string.find(name, "sky") or string.find(name, "netherprism") or string.find(name, "hunt") or string.find(name, "splicer") or string.find(name, "arcanocore") then
+        return "Interface\\Icons\\INV_Misc_Orb_01"
+    
+    -- Armor patterns
+    elseif string.find(name, "helmet") or string.find(name, "helm") or string.find(name, "crown") then
+        return "Interface\\Icons\\INV_Helmet_01"
+    elseif string.find(name, "chest") or string.find(name, "robe") or string.find(name, "vest") then
+        return "Interface\\Icons\\INV_Chest_Cloth_01"
+    elseif string.find(name, "pants") or string.find(name, "leggings") or string.find(name, "breeches") then
+        return "Interface\\Icons\\INV_Pants_Cloth_01"
+    elseif string.find(name, "boots") or string.find(name, "shoes") or string.find(name, "slippers") then
+        return "Interface\\Icons\\INV_Boots_Cloth_01"
+    elseif string.find(name, "gloves") or string.find(name, "gauntlets") or string.find(name, "mitts") then
+        return "Interface\\Icons\\INV_Gauntlets_01"
+    elseif string.find(name, "bracers") or string.find(name, "bracelets") or string.find(name, "wrist") then
+        return "Interface\\Icons\\INV_Bracer_01"
+    elseif string.find(name, "belt") or string.find(name, "girdle") or string.find(name, "sash") then
+        return "Interface\\Icons\\INV_Belt_01"
+    elseif string.find(name, "cloak") or string.find(name, "cape") or string.find(name, "mantle") then
+        return "Interface\\Icons\\INV_Misc_Cape_01"
+    
+    -- Ring patterns
+    elseif string.find(name, "ring") then
+        return "Interface\\Icons\\INV_Jewelry_Ring_01"
+    
+    -- Neck patterns
+    elseif string.find(name, "necklace") or string.find(name, "amulet") or string.find(name, "pendant") or string.find(name, "choker") then
+        return "Interface\\Icons\\INV_Jewelry_Necklace_01"
+    
+    -- Off-hand patterns
+    elseif string.find(name, "off") or string.find(name, "tome") or string.find(name, "book") or string.find(name, "tome") then
+        return "Interface\\Icons\\INV_Misc_Book_01"
+    
+    -- Generic fallbacks
+    elseif string.find(name, "weapon") then
+        return "Interface\\Icons\\INV_Sword_01"
+    elseif string.find(name, "armor") or string.find(name, "gear") then
+        return "Interface\\Icons\\INV_Chest_Cloth_01"
+    else
+        return "Interface\\Icons\\INV_Misc_QuestionMark"
+    end
+end
+
 function ns.UI.TryGetItemIconSync(item)
     if type(item) == "number" then
         local icon = TryGetIconByIDInstant(item)
@@ -515,14 +585,27 @@ function ns.UI.UpdateDataWindowContent()
         
         if not iconTexture and data and data.name then
             local _, _, _, _, _, _, _, _, _, icon = GetItemInfo(data.name)
-            if icon then iconTexture = icon end
+            if icon then 
+                iconTexture = icon 
+            else
+                -- Fallback to hardcoded icon matching
+                local fallbackIcon = ns.UI.GetItemIconByName(data.name)
+                if fallbackIcon then
+                    iconTexture = fallbackIcon
+                end
+            end
         end
         
         if iconTexture then
             itemIcon:SetTexture(iconTexture)
         else
-            -- Fallback to a generic item icon
-            itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+            -- Fallback to hardcoded icon matching
+            local fallbackIcon = ns.UI.GetItemIconByName(data.name)
+            if fallbackIcon then
+                itemIcon:SetTexture(fallbackIcon)
+            else
+                itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+            end
         end
 
         local itemText = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -713,21 +796,26 @@ function ns.UI.ShowBiSListDialog()
         ns.UI.CreateBiSListDialog()
     end
     
-    -- Update guild name display
-    if ns.UI.biSListDialog.guildName then
+    ns.UI.biSListDialog:Show()
+    
+    -- Update guild name display immediately
+    if ns.UI.biSListDialog and ns.UI.biSListDialog.guildName then
         local guildName = (BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName) or ""
+        print("|cff39FF14BiSWishAddon|r: Guild name debug - '" .. tostring(guildName) .. "'")
         if guildName and guildName ~= "" then
             ns.UI.biSListDialog.guildName:SetText("|cff39FF14Guild/Raid Team:|r " .. guildName)
             ns.UI.biSListDialog.guildName:Show()
+            print("|cff39FF14BiSWishAddon|r: Showing guild name: " .. guildName)
         else
             ns.UI.biSListDialog.guildName:Hide()
+            print("|cff39FF14BiSWishAddon|r: Hiding guild name (empty)")
         end
+    else
+        print("|cff39FF14BiSWishAddon|r: Guild name frame not found!")
     end
     
-    ns.UI.biSListDialog:Show()
-    C_Timer.After(0.05, function()
+    -- Update the content
     ns.UI.UpdateBiSListContent()
-    end)
 end
 
 function ns.UI.UpdateBiSListContent()
@@ -774,14 +862,27 @@ function ns.UI.UpdateBiSListContent()
         
         if not iconTexture and data and data.name then
             local _, _, _, _, _, _, _, _, _, icon = GetItemInfo(data.name)
-            if icon then iconTexture = icon end
+            if icon then 
+                iconTexture = icon 
+            else
+                -- Fallback to hardcoded icon matching
+                local fallbackIcon = ns.UI.GetItemIconByName(data.name)
+                if fallbackIcon then
+                    iconTexture = fallbackIcon
+                end
+            end
         end
         
         if iconTexture then
             itemIcon:SetTexture(iconTexture)
         else
-            -- Fallback to a generic item icon
-            itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+            -- Fallback to hardcoded icon matching
+            local fallbackIcon = ns.UI.GetItemIconByName(data.name)
+            if fallbackIcon then
+                itemIcon:SetTexture(fallbackIcon)
+            else
+                itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+            end
         end
 
         itemIcon:SetScript("OnEnter", function(self)
@@ -929,15 +1030,23 @@ function ns.UI.FilterBiSList(searchText)
             local itemIcon = itemFrame:CreateTexture(nil, "OVERLAY")
             itemIcon:SetSize(24, 24)
             itemIcon:SetPoint("LEFT", 10, 0)
-            itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
-            
             -- Try to get the actual item icon
             local itemName = data.name
             if itemName then
                 local itemInfo = GetItemInfo(itemName)
                 if itemInfo then
                     itemIcon:SetTexture(itemInfo)
+                else
+                    -- Fallback to hardcoded icon matching
+                    local fallbackIcon = ns.UI.GetItemIconByName(itemName)
+                    if fallbackIcon then
+                        itemIcon:SetTexture(fallbackIcon)
+                    else
+                        itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+                    end
                 end
+            else
+                itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
             end
             
             -- Item Name
@@ -1308,98 +1417,54 @@ end
 
 -- Show CSV import dialog
 function ns.UI.ShowCSVImportDialog()
-    local frame = CreateFrame("Frame", "BiSWishAddon_CSVImportDialog", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(900, 650)
+    if ns.UI.csvImportDialog then
+        ns.UI.csvImportDialog:Show()
+        return
+    end
+
+    local frame = CreateFrame("Frame", "BiSWishCSVImportDialog", UIParent, "BasicFrameTemplateWithInset")
+    frame:SetSize(600, 500)
     frame:SetPoint("CENTER")
-    frame:SetMovable(true)
-    frame:EnableMouse(true)
-    frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", frame.StartMoving)
-    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-    frame:SetFrameStrata("FULLSCREEN_DIALOG")
-    frame:SetToplevel(true)
+    frame:SetFrameStrata("DIALOG")
+    frame:Hide()
 
     -- Title
-    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOP", 0, -20)
-    title:SetText("|cff39FF14CSV Import|r")
-    title:SetJustifyH("CENTER")
-    title:SetWidth(850)
-    title:SetWordWrap(true)
+    if frame.TitleText then
+        frame.TitleText:SetText("|cff39FF14CSV Import|r")
+    end
 
     -- Instructions
     local instructions = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    instructions:SetPoint("TOPLEFT", 20, -60)
-    instructions:SetWidth(850)
+    instructions:SetPoint("TOPLEFT", 20, -50)
+    instructions:SetWidth(560)
     instructions:SetJustifyH("LEFT")
-    instructions:SetText("Paste your CSV data below. The format should be: Player,Trinket 1,Trinket 2,Weapon 1,Weapon 2,Description")
-    instructions:SetTextColor(0.9, 0.9, 0.9)
+    instructions:SetText("Paste your CSV data below. Format: Player,Trinket 1,Trinket 2,Weapon 1,Weapon 2,Description")
 
-    -- Example text
-    local exampleText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    exampleText:SetPoint("TOPLEFT", 20, -85)
-    exampleText:SetWidth(850)
-    exampleText:SetJustifyH("LEFT")
-    exampleText:SetText("Example: PlayerName,Item1,Item2,Item3,Item4,Notes")
-    exampleText:SetTextColor(0.7, 0.7, 0.7)
-
-    -- CSV Data Label
+    -- Text Label
     local textLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    textLabel:SetPoint("TOPLEFT", 20, -110)
+    textLabel:SetPoint("TOPLEFT", 20, -80)
     textLabel:SetText("CSV Data:")
-    textLabel:SetTextColor(1, 1, 1)
 
     -- Scroll Frame
     local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetSize(840, 350)
-    scrollFrame:SetPoint("TOPLEFT", 20, -140)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -40, 100)
+    scrollFrame:SetSize(560, 300)
+    scrollFrame:SetPoint("TOPLEFT", 20, -110)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -20, 80)
 
     -- Text Edit Box
     local textEditBox = CreateFrame("EditBox", nil, scrollFrame, "InputBoxTemplate")
-    textEditBox:SetSize(820, 350)
+    textEditBox:SetSize(540, 300)
     textEditBox:SetMultiLine(true)
     textEditBox:SetAutoFocus(false)
     textEditBox:SetTextInsets(10, 10, 10, 10)
     textEditBox:SetFontObject("GameFontHighlight")
-    textEditBox:SetScript("OnTextChanged", function(self)
-        local text = self:GetText()
-        if text and text ~= "" then
-            -- Count lines for feedback
-            local lineCount = 0
-            for _ in text:gmatch("\n") do
-                lineCount = lineCount + 1
-            end
-            lineCount = lineCount + 1 -- Add 1 for the last line
-            
-            -- Update status
-            if statusText then
-                statusText:SetText("Lines: " .. lineCount .. " | Characters: " .. string.len(text))
-            end
-        else
-            if statusText then
-                statusText:SetText("Ready to import")
-            end
-        end
-    end)
     scrollFrame:SetScrollChild(textEditBox)
 
-    -- Status text
-    local statusText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    statusText:SetPoint("TOPLEFT", 20, -510)
-    statusText:SetText("Ready to import")
-    statusText:SetTextColor(0.6, 0.6, 0.6)
-
-    -- Buttons Container
-    local buttonContainer = CreateFrame("Frame", nil, frame)
-    buttonContainer:SetSize(400, 50)
-    buttonContainer:SetPoint("BOTTOM", 0, 20)
-
     -- Import Button
-    local importButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
-    importButton:SetSize(140, 40)
-    importButton:SetPoint("LEFT", 0, 0)
-    importButton:SetText("Import CSV")
+    local importButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    importButton:SetSize(100, 30)
+    importButton:SetPoint("BOTTOMRIGHT", -20, 20)
+    importButton:SetText("Import")
     importButton:SetScript("OnClick", function()
         local data = textEditBox:GetText()
         if data and data ~= "" then
@@ -1411,22 +1476,21 @@ function ns.UI.ShowCSVImportDialog()
     end)
 
     -- Cancel Button
-    local cancelButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
-    cancelButton:SetSize(140, 40)
-    cancelButton:SetPoint("LEFT", importButton, "RIGHT", 20, 0)
+    local cancelButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    cancelButton:SetSize(100, 30)
+    cancelButton:SetPoint("RIGHT", importButton, "LEFT", -10, 0)
     cancelButton:SetText("Cancel")
     cancelButton:SetScript("OnClick", function()
         frame:Hide()
     end)
 
     -- Clear Button
-    local clearButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
-    clearButton:SetSize(100, 40)
-    clearButton:SetPoint("LEFT", cancelButton, "RIGHT", 20, 0)
+    local clearButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    clearButton:SetSize(80, 30)
+    clearButton:SetPoint("RIGHT", cancelButton, "LEFT", -10, 0)
     clearButton:SetText("Clear")
     clearButton:SetScript("OnClick", function()
         textEditBox:SetText("")
-        statusText:SetText("Ready to import")
     end)
 
     ns.UI.csvImportDialog = frame

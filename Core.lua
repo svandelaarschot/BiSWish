@@ -7,6 +7,11 @@ ns.Core = ns.Core or {}
 -- Database structure
 BiSWishAddonDB = BiSWishAddonDB or {
     items = {}, -- itemID -> {name, players = {player1, player2, ...}}
+    options = {
+        autoOpenOnBossKill = true,
+        guildRaidThreshold = 0.8,
+        guildRaidTeamName = ""
+    },
     version = 1
 }
 
