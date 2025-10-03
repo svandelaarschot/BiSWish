@@ -88,67 +88,67 @@ function ns.UI.GetItemIconByName(itemName)
     
     local name = string.lower(itemName)
     
-    -- Weapon patterns
-    if string.find(name, "sword") or string.find(name, "blade") then
-        return "Interface\\Icons\\INV_Sword_01"
+    -- Weapon patterns - Better, more specific icons
+    if string.find(name, "sword") or string.find(name, "blade") or string.find(name, "sovereign") then
+        return "Interface\\Icons\\INV_Sword_04"
     elseif string.find(name, "axe") then
-        return "Interface\\Icons\\INV_Axe_01"
+        return "Interface\\Icons\\INV_Axe_02"
     elseif string.find(name, "mace") or string.find(name, "hammer") then
-        return "Interface\\Icons\\INV_Mace_01"
+        return "Interface\\Icons\\INV_Mace_02"
     elseif string.find(name, "dagger") or string.find(name, "kris") then
-        return "Interface\\Icons\\INV_Weapon_ShortBlade_01"
+        return "Interface\\Icons\\INV_Weapon_ShortBlade_02"
     elseif string.find(name, "staff") or string.find(name, "spire") then
-        return "Interface\\Icons\\INV_Staff_01"
+        return "Interface\\Icons\\INV_Staff_02"
     elseif string.find(name, "bow") or string.find(name, "strandbow") then
-        return "Interface\\Icons\\INV_Weapon_Bow_01"
+        return "Interface\\Icons\\INV_Weapon_Bow_02"
     elseif string.find(name, "gun") or string.find(name, "rifle") then
-        return "Interface\\Icons\\INV_Weapon_Rifle_01"
+        return "Interface\\Icons\\INV_Weapon_Rifle_02"
     elseif string.find(name, "wand") then
-        return "Interface\\Icons\\INV_Wand_01"
+        return "Interface\\Icons\\INV_Wand_02"
     elseif string.find(name, "shield") then
-        return "Interface\\Icons\\INV_Shield_01"
+        return "Interface\\Icons\\INV_Shield_02"
     
-    -- Trinket patterns
-    elseif string.find(name, "trinket") or string.find(name, "antenna") or string.find(name, "core") or string.find(name, "forge") or string.find(name, "silk") or string.find(name, "command") or string.find(name, "sky") or string.find(name, "netherprism") or string.find(name, "hunt") or string.find(name, "splicer") or string.find(name, "arcanocore") then
-        return "Interface\\Icons\\INV_Misc_Orb_01"
+    -- Trinket patterns - Better trinket icons
+    elseif string.find(name, "trinket") or string.find(name, "antenna") or string.find(name, "core") or string.find(name, "forge") or string.find(name, "silk") or string.find(name, "command") or string.find(name, "sky") or string.find(name, "netherprism") or string.find(name, "hunt") or string.find(name, "splicer") or string.find(name, "arcanocore") or string.find(name, "brand") or string.find(name, "ritual") or string.find(name, "oath") or string.find(name, "ward") or string.find(name, "screams") or string.find(name, "photon") or string.find(name, "voidglass") or string.find(name, "diamantine") or string.find(name, "unwavering") or string.find(name, "sigil") or string.find(name, "prodigious") or string.find(name, "lacerated") or string.find(name, "maw") or string.find(name, "vengeful") or string.find(name, "collapsing") or string.find(name, "eradicating") then
+        return "Interface\\Icons\\INV_Misc_Orb_02"
     
-    -- Armor patterns
+    -- Armor patterns - Better armor icons
     elseif string.find(name, "helmet") or string.find(name, "helm") or string.find(name, "crown") then
-        return "Interface\\Icons\\INV_Helmet_01"
+        return "Interface\\Icons\\INV_Helmet_02"
     elseif string.find(name, "chest") or string.find(name, "robe") or string.find(name, "vest") then
-        return "Interface\\Icons\\INV_Chest_Cloth_01"
+        return "Interface\\Icons\\INV_Chest_Cloth_02"
     elseif string.find(name, "pants") or string.find(name, "leggings") or string.find(name, "breeches") then
-        return "Interface\\Icons\\INV_Pants_Cloth_01"
+        return "Interface\\Icons\\INV_Pants_Cloth_02"
     elseif string.find(name, "boots") or string.find(name, "shoes") or string.find(name, "slippers") then
-        return "Interface\\Icons\\INV_Boots_Cloth_01"
+        return "Interface\\Icons\\INV_Boots_Cloth_02"
     elseif string.find(name, "gloves") or string.find(name, "gauntlets") or string.find(name, "mitts") then
-        return "Interface\\Icons\\INV_Gauntlets_01"
+        return "Interface\\Icons\\INV_Gauntlets_02"
     elseif string.find(name, "bracers") or string.find(name, "bracelets") or string.find(name, "wrist") then
-        return "Interface\\Icons\\INV_Bracer_01"
+        return "Interface\\Icons\\INV_Bracer_02"
     elseif string.find(name, "belt") or string.find(name, "girdle") or string.find(name, "sash") then
-        return "Interface\\Icons\\INV_Belt_01"
+        return "Interface\\Icons\\INV_Belt_02"
     elseif string.find(name, "cloak") or string.find(name, "cape") or string.find(name, "mantle") then
-        return "Interface\\Icons\\INV_Misc_Cape_01"
+        return "Interface\\Icons\\INV_Misc_Cape_02"
     
-    -- Ring patterns
+    -- Ring patterns - Better ring icons
     elseif string.find(name, "ring") then
-        return "Interface\\Icons\\INV_Jewelry_Ring_01"
+        return "Interface\\Icons\\INV_Jewelry_Ring_02"
     
-    -- Neck patterns
+    -- Neck patterns - Better necklace icons
     elseif string.find(name, "necklace") or string.find(name, "amulet") or string.find(name, "pendant") or string.find(name, "choker") then
-        return "Interface\\Icons\\INV_Jewelry_Necklace_01"
+        return "Interface\\Icons\\INV_Jewelry_Necklace_02"
     
-    -- Off-hand patterns
+    -- Off-hand patterns - Better off-hand icons
     elseif string.find(name, "off") or string.find(name, "tome") or string.find(name, "book") or string.find(name, "tome") then
-        return "Interface\\Icons\\INV_Misc_Book_01"
+        return "Interface\\Icons\\INV_Misc_Book_02"
     
-    -- Generic fallbacks
+    -- Generic fallbacks - Better generic icons
     elseif string.find(name, "weapon") then
-        return "Interface\\Icons\\INV_Sword_01"
+        return "Interface\\Icons\\INV_Sword_02"
     elseif string.find(name, "armor") or string.find(name, "gear") then
-        return "Interface\\Icons\\INV_Chest_Cloth_01"
+        return "Interface\\Icons\\INV_Chest_Cloth_02"
     else
-        return "Interface\\Icons\\INV_Misc_QuestionMark"
+        return "Interface\\Icons\\INV_Misc_Gem_01"
     end
 end
 
@@ -1451,13 +1451,25 @@ function ns.UI.ShowCSVImportDialog()
     scrollFrame:SetPoint("TOPLEFT", 20, -110)
     scrollFrame:SetPoint("BOTTOMRIGHT", -20, 80)
 
-    -- Text Edit Box
-    local textEditBox = CreateFrame("EditBox", nil, scrollFrame, "InputBoxTemplate")
+    -- Text Edit Box with proper multi-line support
+    local textEditBox = CreateFrame("EditBox", nil, scrollFrame)
     textEditBox:SetSize(540, 300)
     textEditBox:SetMultiLine(true)
     textEditBox:SetAutoFocus(false)
     textEditBox:SetTextInsets(10, 10, 10, 10)
     textEditBox:SetFontObject("GameFontHighlight")
+    textEditBox:SetJustifyH("LEFT")
+    textEditBox:SetJustifyV("TOP")
+    textEditBox:SetMaxLetters(0) -- No limit
+    textEditBox:SetScript("OnTextChanged", function(self)
+        self:GetParent():UpdateScrollChildRect()
+    end)
+    textEditBox:SetScript("OnEditFocusGained", function(self)
+        self:HighlightText(0, 0)
+    end)
+    textEditBox:SetScript("OnEditFocusLost", function(self)
+        self:HighlightText(0, 0)
+    end)
     scrollFrame:SetScrollChild(textEditBox)
 
     -- Import Button
@@ -1469,6 +1481,21 @@ function ns.UI.ShowCSVImportDialog()
         local data = textEditBox:GetText()
         if data and data ~= "" then
             ns.UI.ProcessCSVImport(data)
+            frame:Hide()
+        else
+            print("|cffFF0000BiSWishAddon|r: No data to import!")
+        end
+    end)
+    
+    -- Import Loot Items Button
+    local importLootButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    importLootButton:SetSize(120, 30)
+    importLootButton:SetPoint("RIGHT", importButton, "LEFT", -10, 0)
+    importLootButton:SetText("Import Loot")
+    importLootButton:SetScript("OnClick", function()
+        local data = textEditBox:GetText()
+        if data and data ~= "" then
+            ns.UI.ProcessLootImport(data)
             frame:Hide()
         else
             print("|cffFF0000BiSWishAddon|r: No data to import!")
@@ -1494,6 +1521,59 @@ function ns.UI.ShowCSVImportDialog()
     end)
 
     ns.UI.csvImportDialog = frame
+end
+
+-- Process Loot Import (Item ID, Item Name, Players format)
+function ns.UI.ProcessLootImport(data)
+    local lines = {}
+    for line in data:gmatch("[^\r\n]+") do
+        table.insert(lines, line)
+    end
+
+    local importedCount = 0
+    local itemMap = {}
+
+    -- Skip header line
+    for i = 2, #lines do
+        local line = lines[i]
+        if line and line ~= "" then
+            local parts = {}
+            for part in line:gmatch("[^,]+") do
+                table.insert(parts, Trim(part))
+            end
+
+            if #parts >= 2 then
+                local itemID = tonumber(parts[1])
+                local itemName = parts[2]
+                local players = parts[3] or ""
+                
+                if itemID and itemName and itemName ~= "" then
+                    -- Parse players (comma-separated)
+                    local playerList = {}
+                    if players and players ~= "" then
+                        for player in players:gmatch("[^,]+") do
+                            table.insert(playerList, Trim(player))
+                        end
+                    end
+                    
+                    -- Store item with real Blizzard item ID
+                    BiSWishAddonDB.items[itemID] = {
+                        name = itemName,
+                        players = playerList,
+                        description = ""
+                    }
+                    importedCount = importedCount + 1
+                end
+            end
+        end
+    end
+
+    print("|cff39FF14BiSWishAddon|r: Imported " .. importedCount .. " loot items with real Blizzard IDs!")
+
+    -- Refresh the data window
+    if ns.UI.dataWindow then
+        ns.UI.UpdateDataWindowContent()
+    end
 end
 
 -- Process CSV import
