@@ -117,9 +117,12 @@ function ns.CreateGeneralPanel()
     guildNameEditBox:SetText("")
     
     guildNameEditBox:SetScript("OnTextChanged", function(self)
-        if not BiSWishAddonDB.options then BiSWishAddonDB.options = {} end
-        BiSWishAddonDB.options.guildRaidTeamName = self:GetText()
-        print("|cff39FF14BiSWishAddon|r: Guild name changed: '" .. (self:GetText() or "") .. "'")
+        -- Only save if this is a user input, not programmatic
+        if not guildNameEditBox._isUpdating then
+            if not BiSWishAddonDB.options then BiSWishAddonDB.options = {} end
+            BiSWishAddonDB.options.guildRaidTeamName = self:GetText()
+            print("|cff39FF14BiSWishAddon|r: Guild name changed: '" .. (self:GetText() or "") .. "'")
+        end
     end)
     
     guildNameEditBox:SetScript("OnEditFocusLost", function(self)
@@ -133,42 +136,44 @@ function ns.CreateGeneralPanel()
     autoCloseLabel:SetPoint("TOPLEFT", guildNameEditBox, "BOTTOMLEFT", 0, -30)
     autoCloseLabel:SetText("Auto-close time (seconds):")
     
-    local autoCloseEditBox = CreateFrame("EditBox", nil, panel, "InputBoxTemplate")
-    autoCloseEditBox:SetPoint("TOPLEFT", autoCloseLabel, "BOTTOMLEFT", 0, -10)
-    autoCloseEditBox:SetSize(100, 30)
-    autoCloseEditBox:SetAutoFocus(false)
-    autoCloseEditBox:SetText(tostring(BiSWishAddonDB.options.autoCloseTime or 30))
+    local autoCloseSlider = CreateFrame("Slider", nil, panel, "OptionsSliderTemplate")
+    autoCloseSlider:SetPoint("TOPLEFT", autoCloseLabel, "BOTTOMLEFT", 0, -10)
+    autoCloseSlider:SetSize(200, 20)
+    autoCloseSlider:SetMinMaxValues(5, 120)
+    autoCloseSlider:SetValue(BiSWishAddonDB.options.autoCloseTime or 30)
+    autoCloseSlider:SetValueStep(5)
+    autoCloseSlider:SetObeyStepOnDrag(true)
     
-    autoCloseEditBox:SetScript("OnTextChanged", function(self)
-        local value = tonumber(self:GetText())
-        if value and value > 0 then
-            if not BiSWishAddonDB.options then BiSWishAddonDB.options = {} end
-            BiSWishAddonDB.options.autoCloseTime = value
-        end
+    -- Set slider text
+    autoCloseSlider.Text:SetText("Auto-close: " .. (BiSWishAddonDB.options.autoCloseTime or 30) .. "s")
+    autoCloseSlider.Low:SetText("5s")
+    autoCloseSlider.High:SetText("120s")
+    
+    autoCloseSlider:SetScript("OnValueChanged", function(self, value)
+        if not BiSWishAddonDB.options then BiSWishAddonDB.options = {} end
+        BiSWishAddonDB.options.autoCloseTime = value
+        self.Text:SetText("Auto-close: " .. value .. "s")
     end)
     
     -- Panel OnShow script to initialize values
     panel:SetScript("OnShow", function()
         -- Initialize guild name editbox
         local currentGuildName = (BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName) or ""
+        guildNameEditBox._isUpdating = true
         guildNameEditBox:SetText(currentGuildName)
+        guildNameEditBox._isUpdating = false
         print("|cff39FF14BiSWishAddon|r: OnShow - Loading guild name: '" .. currentGuildName .. "'")
         
-        -- Initialize auto-close time editbox
+        -- Initialize auto-close time slider
         local currentAutoCloseTime = (BiSWishAddonDB.options and BiSWishAddonDB.options.autoCloseTime) or 30
-        autoCloseEditBox:SetText(tostring(currentAutoCloseTime))
+        autoCloseSlider:SetValue(currentAutoCloseTime)
+        autoCloseSlider.Text:SetText("Auto-close: " .. currentAutoCloseTime .. "s")
         print("|cff39FF14BiSWishAddon|r: OnShow - Loading auto-close time: " .. currentAutoCloseTime .. " seconds")
         
         -- Force update the BiS List dialog if it exists
-        if ns.UI.biSListDialog and ns.UI.biSListDialog.guildName then
-            if currentGuildName and currentGuildName ~= "" then
-                ns.UI.biSListDialog.guildName:SetText("|cff39FF14Guild/Raid Team:|r " .. currentGuildName)
-                ns.UI.biSListDialog.guildName:Show()
-                print("|cff39FF14BiSWishAddon|r: Updated BiS List guild name: " .. currentGuildName)
-            else
-                ns.UI.biSListDialog.guildName:Hide()
-                print("|cff39FF14BiSWishAddon|r: Hiding BiS List guild name (empty)")
-            end
+        if ns.UI.UpdateGuildNameDisplay then
+            ns.UI.UpdateGuildNameDisplay()
+            print("|cff39FF14BiSWishAddon|r: Updated BiS List guild name via global function")
         end
         
         -- Initialize auto-open checkbox

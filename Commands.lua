@@ -192,8 +192,9 @@ end
 
 -- Show options window
 function ns.Commands.ShowOptions()
-    ns.Options.ShowOptionsWindow()
-    print("|cff39FF14BiSWishAddon|r: Opening options window")
+    -- Open WoW Options menu to BiSWish category
+    Settings.OpenToCategory("BiSWishAddon")
+    print("|cff39FF14BiSWishAddon|r: Opening WoW Options menu to BiSWish settings")
 end
 
 -- Clear all data

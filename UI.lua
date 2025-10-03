@@ -674,18 +674,36 @@ function ns.UI.CreateBiSListDialog()
     frame.guildName:SetWordWrap(true)
     frame.guildName:SetTextColor(0.8, 0.8, 0.8)
     
-    -- Update guild name display
-    local function UpdateGuildNameDisplay()
+    -- Update guild name display function (global)
+    function ns.UI.UpdateGuildNameDisplay()
+        print("|cff39FF14BiSWishAddon|r: UpdateGuildNameDisplay called")
+        print("|cff39FF14BiSWishAddon|r: biSListDialog exists: " .. tostring(ns.UI.biSListDialog ~= nil))
+        
+        if not ns.UI.biSListDialog then
+            print("|cff39FF14BiSWishAddon|r: UpdateGuildNameDisplay - biSListDialog not found")
+            return
+        end
+        
+        if not ns.UI.biSListDialog.guildName then
+            print("|cff39FF14BiSWishAddon|r: UpdateGuildNameDisplay - guildName frame not found")
+            return
+        end
+        
         local guildName = (BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName) or ""
+        print("|cff39FF14BiSWishAddon|r: UpdateGuildNameDisplay - guildName: '" .. tostring(guildName) .. "'")
         if guildName and guildName ~= "" then
-            frame.guildName:SetText("|cff39FF14Guild/Raid Team:|r " .. guildName)
-            frame.guildName:Show()
+            ns.UI.biSListDialog.guildName:SetText("|cff39FF14Guild/Raid Team:|r " .. guildName)
+            ns.UI.biSListDialog.guildName:Show()
+            print("|cff39FF14BiSWishAddon|r: Guild name displayed: " .. guildName)
         else
-            frame.guildName:Hide()
+            ns.UI.biSListDialog.guildName:Hide()
+            print("|cff39FF14BiSWishAddon|r: Guild name hidden (empty)")
         end
     end
     
-    UpdateGuildNameDisplay()
+    -- Call immediately
+    ns.UI.UpdateGuildNameDisplay()
+
 
     local logo = frame:CreateTexture(nil, "OVERLAY")
     -- logo:SetTexture("Assets\\logo.tga")
@@ -803,6 +821,9 @@ function ns.UI.ShowBiSListDialog()
         print("|cff39FF14BiSWishAddon|r: Guild name frame not found!")
     end
     
+    -- Also call the UpdateGuildNameDisplay function
+    ns.UI.UpdateGuildNameDisplay()
+    
     -- Update the content
     ns.UI.UpdateBiSListContent()
 end
@@ -845,15 +866,13 @@ function ns.UI.UpdateBiSListContent()
         -- Try to get icon by itemID first, then by name
         local iconTexture = nil
         if type(itemID) == "number" then
-            local _, _, _, _, _, _, _, _, _, icon = GetItemInfo(itemID)
-            if icon then iconTexture = icon end
+            iconTexture = TryGetIconByIDInstant(itemID)
         end
         
         if not iconTexture and data and data.name then
             local _, _, _, _, _, _, _, _, _, icon = GetItemInfo(data.name)
             if icon then 
                 iconTexture = icon 
-            else
             end
         end
         
@@ -898,16 +917,41 @@ function ns.UI.UpdateBiSListContent()
         end)
         itemNameText:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-        local playersStr = table.concat((data and data.players) or {}, ", ")
-        if playersStr and #playersStr > 25 then
-            playersStr = playersStr:sub(1, 22) .. "..."
+        -- Create a shorter player display with count
+        local playersList = (data and data.players) or {}
+        local playerCount = #playersList
+        local shortPlayersText = ""
+        
+        if playerCount > 0 then
+            if playerCount <= 3 then
+                shortPlayersText = table.concat(playersList, ", ")
+            else
+                shortPlayersText = table.concat(playersList, ", ", 1, 2) .. " +" .. (playerCount - 2) .. " more"
+            end
         end
-         local playersTextWidget = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-         playersTextWidget:SetPoint("LEFT", 270, 0)
-         playersTextWidget:SetWidth(200)
-         playersTextWidget:SetJustifyH("LEFT")
+        
+        local playersTextWidget = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        playersTextWidget:SetPoint("LEFT", 270, 0)
+        playersTextWidget:SetWidth(200)
+        playersTextWidget:SetJustifyH("LEFT")
         playersTextWidget:SetTextColor(0.7, 0.7, 1)
-         playersTextWidget:SetText(playersStr or "")
+        playersTextWidget:SetText(shortPlayersText)
+        
+        -- Add tooltip to players text
+        playersTextWidget:SetScript("OnEnter", function(self)
+            if #playersList > 0 then
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetText("|cff00FF00Players wanting this item (" .. playerCount .. "):|r", 1, 1, 1)
+                for i, playerName in ipairs(playersList) do
+                    GameTooltip:AddLine("• " .. playerName, 1, 1, 1)
+                end
+                GameTooltip:Show()
+            end
+        end)
+        
+        playersTextWidget:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
+        end)
 
          -- Description
          local description = (data and data.description) or ""
@@ -1008,15 +1052,22 @@ function ns.UI.FilterBiSList(searchText)
             local itemIcon = itemFrame:CreateTexture(nil, "OVERLAY")
             itemIcon:SetSize(24, 24)
             itemIcon:SetPoint("LEFT", 10, 0)
-            -- Try to get the actual item icon
-            local itemName = data.name
-            if itemName then
-                local itemInfo = GetItemInfo(itemName)
-                if itemInfo then
-                    itemIcon:SetTexture(itemInfo)
-                else
-                    itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+            
+            -- Try to get icon by itemID first, then by name
+            local iconTexture = nil
+            if type(itemID) == "number" then
+                iconTexture = TryGetIconByIDInstant(itemID)
+            end
+            
+            if not iconTexture and data and data.name then
+                local _, _, _, _, _, _, _, _, _, icon = GetItemInfo(data.name)
+                if icon then 
+                    iconTexture = icon 
                 end
+            end
+            
+            if iconTexture then
+                itemIcon:SetTexture(iconTexture)
             else
                 itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
             end
@@ -1040,17 +1091,41 @@ function ns.UI.FilterBiSList(searchText)
                 end
             end
             
-            -- Truncate players text
-            if string.len(playersText) > 25 then 
-                playersText = string.sub(playersText, 1, 22) .. "..." 
+            -- Create a shorter player display with count
+            local playersList = (data and data.players) or {}
+            local playerCount = #playersList
+            local shortPlayersText = ""
+            
+            if playerCount > 0 then
+                if playerCount <= 3 then
+                    shortPlayersText = table.concat(playersList, ", ")
+                else
+                    shortPlayersText = table.concat(playersList, ", ", 1, 2) .. " +" .. (playerCount - 2) .. " more"
+                end
             end
             
             local playersTextWidget = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
             playersTextWidget:SetPoint("LEFT", 270, 0)
-            playersTextWidget:SetText(playersText)
+            playersTextWidget:SetText(shortPlayersText)
             playersTextWidget:SetTextColor(0.7, 0.7, 1)
             playersTextWidget:SetWidth(200)
             playersTextWidget:SetJustifyH("LEFT")
+            
+            -- Add tooltip to players text
+            playersTextWidget:SetScript("OnEnter", function(self)
+                if #playersList > 0 then
+                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                    GameTooltip:SetText("|cff00FF00Players wanting this item (" .. playerCount .. "):|r", 1, 1, 1)
+                    for i, playerName in ipairs(playersList) do
+                        GameTooltip:AddLine("• " .. playerName, 1, 1, 1)
+                    end
+                    GameTooltip:Show()
+                end
+            end)
+            
+            playersTextWidget:SetScript("OnLeave", function(self)
+                GameTooltip:Hide()
+            end)
             
             -- Description
             local description = (data and data.description) or ""
@@ -1389,128 +1464,131 @@ end
 
 -- Show CSV import dialog
 function ns.UI.ShowCSVImportDialog()
-    if ns.UI.csvImportDialog then
-        ns.UI.csvImportDialog:Show()
-        return
-    end
-
-    local frame = CreateFrame("Frame", "BiSWishCSVImportDialog", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 500)
-    frame:SetPoint("CENTER")
-    frame:SetFrameStrata("DIALOG")
-    frame:Hide()
-
-    -- Title
-    if frame.TitleText then
-        frame.TitleText:SetText("|cff39FF14CSV Import|r")
-    end
-
-    -- Instructions
-    local instructions = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    instructions:SetPoint("TOPLEFT", 20, -50)
-    instructions:SetWidth(560)
-    instructions:SetJustifyH("LEFT")
-    instructions:SetText("Paste your CSV data below. Format: Player,Trinket 1,Trinket 2,Weapon 1,Weapon 2,Description")
-
-    -- Text Label
-    local textLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    textLabel:SetPoint("TOPLEFT", 20, -80)
-    textLabel:SetText("CSV Data:")
-
-    -- Scroll Frame
-    local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetSize(560, 300)
-    scrollFrame:SetPoint("TOPLEFT", 20, -110)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -20, 80)
-
-    -- Text Edit Box with proper multi-line support
-    local textEditBox = CreateFrame("EditBox", nil, scrollFrame)
-    textEditBox:SetSize(540, 300)
-    textEditBox:SetMultiLine(true)
-    textEditBox:SetAutoFocus(false)
-    textEditBox:SetTextInsets(10, 10, 10, 10)
-    textEditBox:SetFontObject("GameFontHighlight")
-    textEditBox:SetJustifyH("LEFT")
-    textEditBox:SetJustifyV("TOP")
-    textEditBox:SetMaxLetters(0) -- No limit
-    textEditBox:SetScript("OnTextChanged", function(self)
-        self:GetParent():UpdateScrollChildRect()
-    end)
-    textEditBox:SetScript("OnEditFocusGained", function(self)
-        self:HighlightText(0, 0)
-    end)
-    textEditBox:SetScript("OnEditFocusLost", function(self)
-        self:HighlightText(0, 0)
-    end)
-    scrollFrame:SetScrollChild(textEditBox)
-
-    -- Import Players Button
-    local importPlayersButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    importPlayersButton:SetSize(120, 30)
-    importPlayersButton:SetPoint("BOTTOMRIGHT", -20, 20)
-    importPlayersButton:SetText("Import Players")
-    importPlayersButton:SetScript("OnClick", function()
-        local data = textEditBox:GetText()
-        if data and data ~= "" then
-            ns.UI.ProcessCSVImport(data)
-            frame:Hide()
-        else
-            print("|cffFF0000BiSWishAddon|r: No data to import!")
-        end
-    end)
-    
-    -- Import Loot Items Button
-    local importLootButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    importLootButton:SetSize(120, 30)
-    importLootButton:SetPoint("RIGHT", importPlayersButton, "LEFT", -10, 0)
-    importLootButton:SetText("Import Loot")
-    importLootButton:SetScript("OnClick", function()
-        local data = textEditBox:GetText()
-        if data and data ~= "" then
-            ns.UI.ProcessLootImport(data)
-            frame:Hide()
-        else
-            print("|cffFF0000BiSWishAddon|r: No data to import!")
-        end
-    end)
-    
-    -- Link Players to Loot Button
-    local linkButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    linkButton:SetSize(120, 30)
-    linkButton:SetPoint("RIGHT", importLootButton, "LEFT", -10, 0)
-    linkButton:SetText("Link Players")
-    linkButton:SetScript("OnClick", function()
-        local data = textEditBox:GetText()
-        if data and data ~= "" then
-            ns.UI.ProcessPlayerLootLink(data)
-            frame:Hide()
-        else
-            print("|cffFF0000BiSWishAddon|r: No data to link!")
-        end
-    end)
-
-    -- Cancel Button
-    local cancelButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    cancelButton:SetSize(100, 30)
-    cancelButton:SetPoint("RIGHT", linkButton, "LEFT", -10, 0)
-    cancelButton:SetText("Cancel")
-    cancelButton:SetScript("OnClick", function()
+    -- Create dialog if it doesn't exist
+    if not ns.UI.csvImportDialog then
+        local frame = CreateFrame("Frame", "BiSWishCSVImportDialog", UIParent, "BasicFrameTemplateWithInset")
+        frame:SetSize(600, 500)
+        frame:SetPoint("CENTER")
+        frame:SetFrameStrata("DIALOG")
         frame:Hide()
-    end)
-    
-    -- Clear Button
-    local clearButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    clearButton:SetSize(80, 30)
-    clearButton:SetPoint("RIGHT", cancelButton, "LEFT", -10, 0)
-    clearButton:SetText("Clear")
-    clearButton:SetScript("OnClick", function()
-        textEditBox:SetText("")
-    end)
-    
-    -- Footer
-    ns.UI.CreateFooter(frame)
+        
+        -- Store reference
+        ns.UI.csvImportDialog = frame
+        
+        -- Create all UI elements here (moved from below)
+        -- Title
+        if frame.TitleText then
+            frame.TitleText:SetText("|cff39FF14CSV Import|r")
+        end
 
-    ns.UI.csvImportDialog = frame
+        -- Instructions
+        local instructions = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        instructions:SetPoint("TOPLEFT", 20, -50)
+        instructions:SetWidth(560)
+        instructions:SetJustifyH("LEFT")
+        instructions:SetText("Paste your CSV data below. Format: Player,Trinket 1,Trinket 2,Weapon 1,Weapon 2,Description")
+
+        -- Text Label
+        local textLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        textLabel:SetPoint("TOPLEFT", 20, -80)
+        textLabel:SetText("CSV Data:")
+
+        -- Scroll Frame
+        local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
+        scrollFrame:SetSize(560, 300)
+        scrollFrame:SetPoint("TOPLEFT", 20, -110)
+        scrollFrame:SetPoint("BOTTOMRIGHT", -20, 80)
+
+        -- Text Edit Box with proper multi-line support
+        local textEditBox = CreateFrame("EditBox", nil, scrollFrame)
+        textEditBox:SetSize(540, 300)
+        textEditBox:SetMultiLine(true)
+        textEditBox:SetAutoFocus(false)
+        textEditBox:SetTextInsets(10, 10, 10, 10)
+        textEditBox:SetFontObject("GameFontHighlight")
+        textEditBox:SetJustifyH("LEFT")
+        textEditBox:SetJustifyV("TOP")
+        textEditBox:SetMaxLetters(0) -- No limit
+        textEditBox:SetScript("OnTextChanged", function(self)
+            self:GetParent():UpdateScrollChildRect()
+        end)
+        textEditBox:SetScript("OnEditFocusGained", function(self)
+            self:HighlightText(0, 0)
+        end)
+        textEditBox:SetScript("OnEditFocusLost", function(self)
+            self:HighlightText(0, 0)
+        end)
+        scrollFrame:SetScrollChild(textEditBox)
+
+        -- Import Players Button
+        local importPlayersButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+        importPlayersButton:SetSize(120, 30)
+        importPlayersButton:SetPoint("BOTTOMRIGHT", -20, 20)
+        importPlayersButton:SetText("Import Players")
+        importPlayersButton:SetScript("OnClick", function()
+            local data = textEditBox:GetText()
+            if data and data ~= "" then
+                ns.UI.ProcessCSVImport(data)
+                frame:Hide()
+            else
+                print("|cffFF0000BiSWishAddon|r: No data to import!")
+            end
+        end)
+        
+        -- Import Loot Items Button
+        local importLootButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+        importLootButton:SetSize(120, 30)
+        importLootButton:SetPoint("RIGHT", importPlayersButton, "LEFT", -10, 0)
+        importLootButton:SetText("Import Loot")
+        importLootButton:SetScript("OnClick", function()
+            local data = textEditBox:GetText()
+            if data and data ~= "" then
+                ns.UI.ProcessLootImport(data)
+                frame:Hide()
+            else
+                print("|cffFF0000BiSWishAddon|r: No data to import!")
+            end
+        end)
+        
+        -- Link Players to Loot Button
+        local linkButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+        linkButton:SetSize(120, 30)
+        linkButton:SetPoint("RIGHT", importLootButton, "LEFT", -10, 0)
+        linkButton:SetText("Link Players")
+        linkButton:SetScript("OnClick", function()
+            local data = textEditBox:GetText()
+            if data and data ~= "" then
+                ns.UI.ProcessPlayerLootLink(data)
+                frame:Hide()
+            else
+                print("|cffFF0000BiSWishAddon|r: No data to link!")
+            end
+        end)
+
+        -- Cancel Button
+        local cancelButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+        cancelButton:SetSize(100, 30)
+        cancelButton:SetPoint("RIGHT", linkButton, "LEFT", -10, 0)
+        cancelButton:SetText("Cancel")
+        cancelButton:SetScript("OnClick", function()
+            frame:Hide()
+        end)
+        
+        -- Clear Button
+        local clearButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+        clearButton:SetSize(80, 30)
+        clearButton:SetPoint("RIGHT", cancelButton, "LEFT", -10, 0)
+        clearButton:SetText("Clear")
+        clearButton:SetScript("OnClick", function()
+            textEditBox:SetText("")
+        end)
+        
+        -- Footer
+        ns.UI.CreateFooter(frame)
+    end
+    
+    -- Just show the existing dialog
+    ns.UI.csvImportDialog:Show()
 end
 
 -- Test item drop popup
