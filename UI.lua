@@ -588,24 +588,13 @@ function ns.UI.UpdateDataWindowContent()
             if icon then 
                 iconTexture = icon 
             else
-                -- Fallback to hardcoded icon matching
-                local fallbackIcon = ns.UI.GetItemIconByName(data.name)
-                if fallbackIcon then
-                    iconTexture = fallbackIcon
-                end
             end
         end
         
         if iconTexture then
             itemIcon:SetTexture(iconTexture)
         else
-            -- Fallback to hardcoded icon matching
-            local fallbackIcon = ns.UI.GetItemIconByName(data.name)
-            if fallbackIcon then
-                itemIcon:SetTexture(fallbackIcon)
-            else
-                itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
-            end
+            itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
         end
 
         local itemText = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -865,24 +854,13 @@ function ns.UI.UpdateBiSListContent()
             if icon then 
                 iconTexture = icon 
             else
-                -- Fallback to hardcoded icon matching
-                local fallbackIcon = ns.UI.GetItemIconByName(data.name)
-                if fallbackIcon then
-                    iconTexture = fallbackIcon
-                end
             end
         end
         
         if iconTexture then
             itemIcon:SetTexture(iconTexture)
         else
-            -- Fallback to hardcoded icon matching
-            local fallbackIcon = ns.UI.GetItemIconByName(data.name)
-            if fallbackIcon then
-                itemIcon:SetTexture(fallbackIcon)
-            else
-                itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
-            end
+            itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
         end
 
         itemIcon:SetScript("OnEnter", function(self)
@@ -1037,13 +1015,7 @@ function ns.UI.FilterBiSList(searchText)
                 if itemInfo then
                     itemIcon:SetTexture(itemInfo)
                 else
-                    -- Fallback to hardcoded icon matching
-                    local fallbackIcon = ns.UI.GetItemIconByName(itemName)
-                    if fallbackIcon then
-                        itemIcon:SetTexture(fallbackIcon)
-                    else
-                        itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
-                    end
+                    itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
                 end
             else
                 itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
@@ -1548,6 +1520,7 @@ function ns.UI.TestItemDropPopup()
     local testItemLink = "|cffa335ee|Hitem:242401::::::::80:::::::|h[Brand of Ceaseless Ire]|h|r"
     local testPlayers = {"Player1", "Player2", "Player3"}
     
+    print("|cff39FF14BiSWishAddon|r: Testing item drop popup for: " .. testItemName)
     ns.UI.ShowItemDropPopup(testItemName, testItemLink, testPlayers)
 end
 
@@ -1558,7 +1531,7 @@ function ns.UI.ShowItemDropPopup(itemName, itemLink, interestedPlayers)
     end
     
     local frame = CreateFrame("Frame", "BiSWishAddon_ItemDropPopup", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(500, 300)
+    frame:SetSize(400, 250)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -1575,15 +1548,28 @@ function ns.UI.ShowItemDropPopup(itemName, itemLink, interestedPlayers)
         title:SetPoint("TOP", 0, -10)
         title:SetText("|cff39FF14Item Dropped!|r")
         title:SetJustifyH("CENTER")
-        title:SetWidth(450)
+        title:SetWidth(350)
         title:SetWordWrap(true)
+    end
+    
+    -- Item icon
+    local itemIcon = frame:CreateTexture(nil, "OVERLAY")
+    itemIcon:SetSize(32, 32)
+    itemIcon:SetPoint("TOP", 0, -40)
+    
+    -- Try to get item icon
+    local _, _, _, _, _, _, _, _, _, icon = GetItemInfo(itemName)
+    if icon then
+        itemIcon:SetTexture(icon)
+    else
+        itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
     end
     
     -- Item info
     local itemInfo = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    itemInfo:SetPoint("TOP", 0, -40)
-    itemInfo:SetJustifyH("CENTER")
-    itemInfo:SetWidth(450)
+    itemInfo:SetPoint("LEFT", itemIcon, "RIGHT", 10, 0)
+    itemInfo:SetJustifyH("LEFT")
+    itemInfo:SetWidth(300)
     itemInfo:SetWordWrap(true)
     itemInfo:SetText("|cffFFD700" .. itemName .. "|r")
     
@@ -1591,17 +1577,31 @@ function ns.UI.ShowItemDropPopup(itemName, itemLink, interestedPlayers)
     local playersLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     playersLabel:SetPoint("TOP", itemInfo, "BOTTOM", 0, -20)
     playersLabel:SetText("|cff39FF14Interested Players:|r")
-    playersLabel:SetJustifyH("LEFT")
-    playersLabel:SetWidth(450)
+    playersLabel:SetJustifyH("CENTER")
+    playersLabel:SetWidth(350)
+    
+    -- Scroll frame for players list
+    local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetSize(350, 80)
+    scrollFrame:SetPoint("TOP", playersLabel, "BOTTOM", 0, -5)
+    
+    -- Players content frame
+    local playersContent = CreateFrame("Frame", nil, scrollFrame)
+    playersContent:SetSize(330, 1)
+    scrollFrame:SetScrollChild(playersContent)
     
     -- Players list
     local playersText = table.concat(interestedPlayers, ", ")
-    local playersList = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    playersList:SetPoint("TOP", playersLabel, "BOTTOM", 0, -5)
+    local playersList = playersContent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    playersList:SetPoint("TOPLEFT", 0, 0)
     playersList:SetJustifyH("LEFT")
-    playersList:SetWidth(450)
+    playersList:SetWidth(330)
     playersList:SetWordWrap(true)
     playersList:SetText(playersText)
+    
+    -- Update scroll frame
+    playersContent:SetSize(330, playersList:GetStringHeight())
+    scrollFrame:UpdateScrollChildRect()
     
     -- Close button
     local closeButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
