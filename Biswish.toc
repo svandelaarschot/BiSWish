@@ -1,0 +1,19 @@
+## Interface: 100207
+## Title: |cff39FF14Biswish|r
+## Notes: BiS Wishlist addon for raid loot tracking
+## Author: Alvarín-Silvermoon
+## Version: 1.0
+## SavedVariables: BiSWishAddonDB
+## IconTexture: Interface\Icons\inv_misc_treasurechest_01
+## X-Curse-Project-ID: biswish
+## X-WoWI-ID: 999999
+
+Biswish.lua
+Core.lua
+Data.lua
+Player.lua
+Events.lua
+UI.lua
+File.lua
+Options.lua
+Commands.lua
