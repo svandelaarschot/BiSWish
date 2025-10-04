@@ -1,34 +1,67 @@
--- BiSWishAddon Commands Module
+--[[
+================================================================================
+Commands.lua - BiSWish Addon Slash Commands Module
+================================================================================
+This module handles all slash commands for the BiSWish addon including:
+- Command registration and parsing
+- Help system and command documentation
+- Debug commands and settings management
+- User interaction through chat commands
+
+Author: BiSWish Development Team
+Version: 1.0
+================================================================================
+--]]
+
+-- ============================================================================
+-- MODULE INITIALIZATION
+-- ============================================================================
+
+-- Get addon namespace
 local addonName, ns = ...
 
--- Commands namespace
+-- Create commands namespace
 ns.Commands = ns.Commands or {}
 
--- Initialize commands
+-- ============================================================================
+-- COMMAND REGISTRATION
+-- ============================================================================
+
+--[[
+    Initialize slash commands system
+    Registers all slash commands with WoW's command system
+--]]
 function ns.Commands.Initialize()
-    print("|cff39FF14BiSWishAddon|r: Starting command initialization...")
+    ns.Core.DebugInfo("Starting command initialization...")
     
     -- Register slash commands
     SLASH_BISWISH1 = "/bis"
     SlashCmdList["BISWISH"] = function(msg)
-        print("|cff39FF14BiSWishAddon|r: Slash command triggered!")
+        ns.Core.DebugDebug("Slash command triggered!")
         ns.Commands.HandleCommand(msg)
     end
     
-    print("|cff39FF14BiSWishAddon|r: Commands initialized! Use /bis for help")
-    print("|cff39FF14BiSWishAddon|r: Test - /bis command should work now!")
+    ns.Core.DebugInfo("Commands initialized! Use /bis for help")
+    ns.Core.DebugDebug("Test - /bis command should work now!")
     
     -- Test if command is registered
     if SLASH_BISWISH1 then
-        print("|cff39FF14BiSWishAddon|r: SLASH_BISWISH1 = " .. SLASH_BISWISH1)
+        ns.Core.DebugDebug("SLASH_BISWISH1 = %s", SLASH_BISWISH1)
     else
-        print("|cff39FF14BiSWishAddon|r: ERROR - SLASH_BISWISH1 not set!")
+        ns.Core.DebugError("SLASH_BISWISH1 not set!")
     end
 end
 
--- Handle slash commands
+-- ============================================================================
+-- COMMAND HANDLING
+-- ============================================================================
+
+--[[
+    Handle slash commands
+    @param msg (string) - The command message from the user
+--]]
 function ns.Commands.HandleCommand(msg)
-    print("|cff39FF14BiSWishAddon|r: Command received: " .. (msg or "empty"))
+    ns.Core.DebugDebug("Command received: %s", msg or "empty")
     
     local args = {}
     for word in msg:gmatch("%S+") do
@@ -53,7 +86,7 @@ function ns.Commands.HandleCommand(msg)
         ns.Commands.ExportData()
     elseif command == "import" then
         ns.Commands.ImportData(args)
-    elseif command == "options" then
+    elseif command == "options" or command == "config" or command == "settings" then
         ns.Commands.ShowOptions()
     elseif command == "list" then
         ns.Commands.ShowBiSList()
@@ -61,37 +94,59 @@ function ns.Commands.HandleCommand(msg)
         ns.Commands.ClearData()
     elseif command == "testdrop" then
         ns.Commands.TestItemDrop()
+    elseif command == "debug" then
+        ns.Commands.ToggleDebugMode()
+    elseif command == "debuglevel" then
+        ns.Commands.SetDebugLevel(args)
     else
-        print("|cff39FF14BiSWishAddon|r: Unknown command. Type /bis help for available commands")
+        ns.Core.DebugInfo("Unknown command. Type /bis help for available commands")
     end
 end
 
--- Show help
+-- ============================================================================
+-- HELP SYSTEM
+-- ============================================================================
+
+--[[
+    Show help information
+    Displays all available commands and their usage
+--]]
 function ns.Commands.ShowHelp()
-    print("|cff39FF14BiSWishAddon Commands:|r")
-    print("|cff00FF00/bis add <itemID> <itemName> <player1,player2,player3>|r - Add item to wishlist")
-    print("|cff00FF00/bis remove <itemID>|r - Remove item from wishlist")
-    print("|cff00FF00/bis list|r - Show complete BiS list with search")
-    print("|cff00FF00/bis show|r - Show BiS window")
-    print("|cff00FF00/bis data|r - Open data management window")
-    print("|cff00FF00/bis export|r - Export data to JSON file")
-    print("|cff00FF00/bis import <filename>|r - Import data from JSON file")
-    print("|cff00FF00/bis options|r - Open options window")
-    print("|cff00FF00/bis clear|r - Clear all data")
-    print("|cff00FF00/bis testdrop|r - Test item drop popup")
-    print("|cff00FF00/bis help|r - Show this help")
+    ns.Core.DebugInfo("BiSWishAddon Commands:")
+    ns.Core.DebugInfo("/bis add <itemID> <itemName> <player1,player2,player3> - Add item to wishlist")
+    ns.Core.DebugInfo("/bis remove <itemID> - Remove item from wishlist")
+    ns.Core.DebugInfo("/bis list - Show complete BiS list with search")
+    ns.Core.DebugInfo("/bis show - Show BiS window")
+    ns.Core.DebugInfo("/bis data - Open data management window")
+    ns.Core.DebugInfo("/bis export - Export data to JSON file")
+    ns.Core.DebugInfo("/bis import <filename> - Import data from JSON file")
+    ns.Core.DebugInfo("/bis options - Open options window")
+    ns.Core.DebugInfo("/bis config - Open settings window")
+    ns.Core.DebugInfo("/bis settings - Open settings window")
+    ns.Core.DebugInfo("/bis clear - Clear all data")
+    ns.Core.DebugInfo("/bis testdrop - Test item drop popup")
+    ns.Core.DebugInfo("/bis debug - Toggle debug mode")
+    ns.Core.DebugInfo("/bis debuglevel <1-5> - Set debug level (1=ERROR, 2=WARNING, 3=INFO, 4=DEBUG, 5=VERBOSE)")
+    ns.Core.DebugInfo("/bis help - Show this help")
 end
 
--- Add item to wishlist
+-- ============================================================================
+-- ITEM MANAGEMENT COMMANDS
+-- ============================================================================
+
+--[[
+    Add item to wishlist
+    @param args (table) - Command arguments [itemID, itemName, players]
+--]]
 function ns.Commands.AddItem(args)
     if #args < 3 then
-        print("|cffFF0000BiSWishAddon|r: Usage: /bis add <itemID> <itemName> <player1,player2,player3>")
+        ns.Core.DebugError("Usage: /bis add <itemID> <itemName> <player1,player2,player3>")
         return
     end
     
     local itemID = tonumber(args[2])
     if not itemID then
-        print("|cffFF0000BiSWishAddon|r: Invalid item ID")
+        ns.Core.DebugError("Invalid item ID")
         return
     end
     
@@ -105,54 +160,66 @@ function ns.Commands.AddItem(args)
     end
     
     ns.Data.AddItem(itemID, itemName, players)
-    print("|cff39FF14BiSWishAddon|r: Added item " .. itemName .. " (ID: " .. itemID .. ") with " .. #players .. " players")
+    ns.Core.DebugInfo("Added item %s (ID: %s) with %d players", itemName, itemID, #players)
 end
 
--- Remove item from wishlist
+--[[
+    Remove item from wishlist
+    @param args (table) - Command arguments [itemID]
+--]]
 function ns.Commands.RemoveItem(args)
     if #args < 2 then
-        print("|cffFF0000BiSWishAddon|r: Usage: /bis remove <itemID>")
+        ns.Core.DebugError("Usage: /bis remove <itemID>")
         return
     end
     
     local itemID = tonumber(args[2])
     if not itemID then
-        print("|cffFF0000BiSWishAddon|r: Invalid item ID")
+        ns.Core.DebugError("Invalid item ID")
         return
     end
     
     if BiSWishAddonDB.items[itemID] then
         local itemName = BiSWishAddonDB.items[itemID].name
         BiSWishAddonDB.items[itemID] = nil
-        print("|cff39FF14BiSWishAddon|r: Removed item " .. itemName .. " (ID: " .. itemID .. ")")
+        ns.Core.DebugInfo("Removed item %s (ID: %s)", itemName, itemID)
     else
-        print("|cffFF0000BiSWishAddon|r: Item not found in wishlist")
+        ns.Core.DebugError("Item not found in wishlist")
     end
 end
 
 -- List all items (legacy function - now opens BiS list dialog)
+-- ============================================================================
+-- DISPLAY COMMANDS
+-- ============================================================================
+
+--[[
+    List all items in the wishlist
+--]]
 function ns.Commands.ListItems()
     ns.Commands.ShowBiSList()
 end
 
--- Show BiS window
+--[[
+    Show BiS window
+--]]
 function ns.Commands.ShowWindow()
     ns.UI.ShowBossWindow("Manual View")
-    print("|cff39FF14BiSWishAddon|r: Showing BiS window")
+    ns.Core.DebugInfo("Showing BiS window")
 end
 
 -- Show data management window
 function ns.Commands.ShowDataWindow()
     ns.UI.ShowDataWindow()
-    print("|cff39FF14BiSWishAddon|r: Opening data management window")
+    ns.Core.DebugInfo("Opening data management window")
 end
 
 -- Export data to JSON
 function ns.Commands.ExportData()
     if ns.File.ExportToJSON() then
-        print("|cff39FF14BiSWishAddon|r: Data exported successfully!")
+        ns.Core.DebugInfo("Data exported successfully!")
     else
-        print("|cffFF0000BiSWishAddon|r: Export failed!")
+        ns.Core.DebugError("Export failed!")
     end
 end
 
@@ -192,21 +259,91 @@ end
 
 -- Show options window
 function ns.Commands.ShowOptions()
-    -- Open WoW Options menu to BiSWish category
-    Settings.OpenToCategory("BiSWishAddon")
-    print("|cff39FF14BiSWishAddon|r: Opening WoW Options menu to BiSWish settings")
+    -- Open the correct settings and go directly to BiSWish tab
+    if Settings and Settings.OpenToCategory then
+        -- Retail (Dragonflight+) - use the saved category reference
+        if _G.BiSWishSettingsCategory then
+            Settings.OpenToCategory(_G.BiSWishSettingsCategory:GetID())
+            ns.Core.DebugInfo("Opening BiSWish settings...")
+        else
+            -- Fallback: try to get the category
+            local category = Settings.GetCategory("BiSWish")
+            if category then
+                Settings.OpenToCategory(category:GetID())
+                ns.Core.DebugInfo("Opening BiSWish settings (found category)...")
+            else
+                -- Last fallback: try the old method
+                Settings.OpenToCategory("BiSWish")
+                ns.Core.DebugInfo("Opening settings (fallback)...")
+            end
+        end
+    elseif InterfaceOptionsFrame_OpenToCategory then
+        -- Classic/older versions - double call fixes Blizzard bug
+        InterfaceOptionsFrame_OpenToCategory("BiSWish")
+        C_Timer.After(0.1, function()
+            InterfaceOptionsFrame_OpenToCategory("BiSWish")
+        end)
+        ns.Core.DebugInfo("Opening settings...")
+    else
+        -- Fallback: open interface options
+        if SettingsPanel then
+            SettingsPanel:Show()
+            ns.Core.DebugInfo("Please navigate to the BiSWish section in Settings.")
+        elseif InterfaceOptionsFrame then
+            InterfaceOptionsFrame:Show()
+            ns.Core.DebugInfo("Please navigate to the BiSWish section in Interface Options.")
+        else
+            ns.Core.DebugInfo("Could not open settings. Please use the Game Menu > Options > AddOns.")
+        end
+    end
 end
 
 -- Clear all data
 function ns.Commands.ClearData()
     BiSWishAddonDB.items = {}
-    print("|cff39FF14BiSWishAddon|r: All data cleared")
+    ns.Core.DebugInfo("All data cleared")
 end
 
 -- Test item drop popup
 function ns.Commands.TestItemDrop()
-    print("|cff39FF14BiSWishAddon|r: Testing item drop popup...")
+    ns.Core.DebugInfo("Testing item drop popup...")
     ns.UI.TestItemDropPopup()
+end
+
+-- ============================================================================
+-- DEBUG COMMANDS
+-- ============================================================================
+
+--[[
+    Toggle debug mode on/off
+--]]
+function ns.Commands.ToggleDebugMode()
+    if ns.Core and ns.Core.ToggleDebugMode then
+        ns.Core.ToggleDebugMode()
+    else
+        print("|cffFF0000BiSWishAddon|r: Debug system not available")
+    end
+end
+
+-- Set debug level
+function ns.Commands.SetDebugLevel(args)
+    if #args < 2 then
+        print("|cffFF0000BiSWishAddon|r: Usage: /bis debuglevel <1-5>")
+        print("|cff39FF14BiSWishAddon|r: 1=ERROR, 2=WARNING, 3=INFO, 4=DEBUG, 5=VERBOSE")
+        return
+    end
+    
+    local level = tonumber(args[2])
+    if not level or level < 1 or level > 5 then
+        print("|cffFF0000BiSWishAddon|r: Invalid debug level. Use 1-5")
+        return
+    end
+    
+    if ns.Core and ns.Core.SetDebugLevel then
+        ns.Core.SetDebugLevel(level)
+    else
+        print("|cffFF0000BiSWishAddon|r: Debug system not available")
+    end
 end
 
 -- String trim function

@@ -1,12 +1,32 @@
--- BiSWishAddon UI Module (refactored, ID-first icon resolve, no hardcoded datasets)
+--[[
+================================================================================
+UI.lua - BiSWish Addon User Interface Module
+================================================================================
+This module handles all user interface components for the BiSWish addon including:
+- Boss window and BiS list display
+- Item drop popups and notifications
+- Data management dialogs
+- Icon resolution and item display
+- Window management and styling
+
+Author: BiSWish Development Team
+Version: 1.0
+================================================================================
+--]]
+
+-- ============================================================================
+-- MODULE INITIALIZATION
+-- ============================================================================
+
+-- Get addon namespace
 local addonName, ns = ...
 
--- Namespaces
+-- Create UI namespace
 ns.UI = ns.UI or {}
 
-------------------------------------------------------------
--- Helpers / Constants
-------------------------------------------------------------
+-- ============================================================================
+-- CONSTANTS AND HELPERS
+-- ============================================================================
 local PLACEHOLDER_ICON = "Interface\\Icons\\INV_Misc_Orb_01"
 
 local function Trim(s)
@@ -204,8 +224,16 @@ end
 
 ------------------------------------------------------------
 -- Initialize UI
-------------------------------------------------------------
+-- ============================================================================
+-- UI SYSTEM INITIALIZATION
+-- ============================================================================
+
+--[[
+    Initialize UI system
+    Sets up all UI components and windows
+--]]
 function ns.UI.Initialize()
+    ns.Core.DebugInfo("Initializing UI components...")
     ns.UI.CreateBossWindow()
     ns.UI.CreateDataWindow()
     ns.UI.CreateBiSListDialog()
@@ -217,12 +245,20 @@ function ns.UI.Initialize()
         -- ns.UI._eventFrame:RegisterEvent("ENCOUNTER_END")
         -- ns.UI._eventFrame:SetScript("OnEvent", function(_, event) if event=="ENCOUNTER_END" then ns.UI.CheckBossKillAutoOpen() end end)
     end
-    print("|cff39FF14BiSWishAddon|r: UI initialized!")
+    ns.Core.DebugInfo("UI initialized!")
 end
 
 ------------------------------------------------------------
 -- Boss Window
 ------------------------------------------------------------
+-- ============================================================================
+-- WINDOW CREATION FUNCTIONS
+-- ============================================================================
+
+--[[
+    Create the main boss window
+    This is the primary window for displaying BiS data
+--]]
 function ns.UI.CreateBossWindow()
     local frame = CreateFrame("Frame", "BiSWishAddon_BossWindow", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(600, 500)
@@ -262,12 +298,29 @@ function ns.UI.CreateBossWindow()
     ns.UI.bossWindow = frame
 end
 
+-- ============================================================================
+-- WINDOW DISPLAY FUNCTIONS
+-- ============================================================================
+
+--[[
+    Show the boss window
+    @param bossName (string) - Name of the boss for display
+--]]
 function ns.UI.ShowBossWindow(bossName)
+    ns.Core.DebugDebug("Showing boss window for: %s", bossName or "Manual View")
     if not ns.UI.bossWindow then
+        ns.Core.DebugInfo("Creating boss window...")
         ns.UI.CreateBossWindow()
     end
     ns.UI.bossWindow:Show()
-    local titleText = "BiS Wishlist - " .. (bossName or "Manual View")
+    
+    -- Get guild name from options
+    local guildName = ""
+    if BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName and BiSWishAddonDB.options.guildRaidTeamName ~= "" then
+        guildName = " [" .. BiSWishAddonDB.options.guildRaidTeamName .. "]"
+    end
+    
+    local titleText = "BiS Wishlist - " .. (bossName or "Manual View") .. guildName
     if ns.UI.bossWindow.TitleText then
         ns.UI.bossWindow.TitleText:SetText(titleText)
     elseif ns.UI.bossWindow.title then
@@ -277,8 +330,12 @@ function ns.UI.ShowBossWindow(bossName)
 end
 
 function ns.UI.UpdateBossWindowContent()
+    ns.Core.DebugDebug("Updating boss window content...")
     local frame = ns.UI.bossWindow
-    if not frame then return end
+    if not frame then 
+        ns.Core.DebugWarning("Boss window frame not found!")
+        return 
+    end
     local content = frame.content
     
     ClearChildren(content)
@@ -287,6 +344,7 @@ function ns.UI.UpdateBossWindowContent()
     local itemCount = 0
     
     if not BiSWishAddonDB or not BiSWishAddonDB.items then
+        ns.Core.DebugInfo("No BiS data available")
         local noDataText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         noDataText:SetPoint("CENTER", 0, 0)
         noDataText:SetText("No BiS data available")
@@ -298,13 +356,18 @@ function ns.UI.UpdateBossWindowContent()
     for itemID, data in pairs(BiSWishAddonDB.items) do
         if itemCount < 20 then
             local itemFrame = CreateFrame("Frame", nil, content)
-            itemFrame:SetSize(520, 30)
+            itemFrame:SetSize(520, 35)
             itemFrame:SetPoint("TOPLEFT", 10, yOffset)
             
-            -- Icon (nice touch for the boss view as well)
+            -- Add subtle background for better visual separation
+            local rowBg = itemFrame:CreateTexture(nil, "BACKGROUND")
+            rowBg:SetAllPoints()
+            rowBg:SetColorTexture(0.05, 0.05, 0.05, 0.3)
+            
+            -- Icon with tooltip
             local iconTex = itemFrame:CreateTexture(nil, "OVERLAY")
-            iconTex:SetSize(20, 20)
-            iconTex:SetPoint("LEFT", 0, 0)
+            iconTex:SetSize(24, 24)
+            iconTex:SetPoint("LEFT", 5, 0)
             iconTex:SetTexture(PLACEHOLDER_ICON)
             ns.UI.ResolveItemIcon(tonumber(itemID) or (data and data.name), function(icon)
                 if icon and iconTex and iconTex.SetTexture then
@@ -312,31 +375,101 @@ function ns.UI.UpdateBossWindowContent()
                 end
             end)
             
-            local itemName = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            itemName:SetPoint("LEFT", 25, 0)
+            -- Add tooltip to icon
+            iconTex:SetScript("OnEnter", function(self)
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetText("|cff39FF14" .. ((data and data.name) or "Unknown") .. "|r", 1, 1, 1)
+                GameTooltip:AddLine(" ")
+                GameTooltip:AddLine("|cffFFFF00Players wanting this item:|r", 1, 1, 0)
+                for _, player in ipairs((data and data.players) or {}) do
+                    GameTooltip:AddLine("• " .. player, 0.8, 0.8, 1)
+                end
+                GameTooltip:AddLine(" ")
+                GameTooltip:AddLine("|cff00FF00Total players: " .. tostring(#((data and data.players) or {})) .. "|r", 0, 1, 0)
+                GameTooltip:Show()
+            end)
+            iconTex:SetScript("OnLeave", function() GameTooltip:Hide() end)
+            
+            -- Item name with enhanced styling
+            local itemName = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            itemName:SetPoint("LEFT", 35, 0)
             itemName:SetText((data and data.name) or "Unknown Item")
             itemName:SetTextColor(1, 1, 0)
             itemName:SetWidth(200)
             itemName:SetJustifyH("LEFT")
             
-            local playersText = table.concat((data and data.players) or {}, ", ")
-            local players = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            players:SetPoint("LEFT", 230, 0)
-            players:SetText(playersText)
-            players:SetTextColor(0.8, 0.8, 0.8)
-            players:SetWidth(280)
+            -- Add tooltip to item name
+            itemName:SetScript("OnEnter", function(self)
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetText("|cff39FF14" .. ((data and data.name) or "Unknown") .. "|r", 1, 1, 1)
+                GameTooltip:AddLine(" ")
+                GameTooltip:AddLine("|cffFFFF00Players wanting this item:|r", 1, 1, 0)
+                for _, player in ipairs((data and data.players) or {}) do
+                    GameTooltip:AddLine("• " .. player, 0.8, 0.8, 1)
+                end
+                GameTooltip:AddLine(" ")
+                GameTooltip:AddLine("|cff00FF00Total players: " .. tostring(#((data and data.players) or {})) .. "|r", 0, 1, 0)
+                GameTooltip:Show()
+            end)
+            itemName:SetScript("OnLeave", function() GameTooltip:Hide() end)
+            
+            -- Truncated player list with tooltip
+            local playersList = (data and data.players) or {}
+            local playerCount = #playersList
+            local shortPlayersText = ""
+            
+            if playerCount > 0 then
+                if playerCount <= 3 then
+                    shortPlayersText = table.concat(playersList, ", ")
+                else
+                    shortPlayersText = table.concat(playersList, ", ", 1, 2) .. " +" .. (playerCount - 2) .. " more"
+                end
+            end
+            
+            local players = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            players:SetPoint("LEFT", 240, 0)
+            players:SetText(shortPlayersText)
+            players:SetTextColor(0.7, 0.7, 1)
+            players:SetWidth(250)
             players:SetJustifyH("LEFT")
             
-            yOffset = yOffset - 35
+            -- Add tooltip to players text
+            players:SetScript("OnEnter", function(self)
+                if #playersList > 0 then
+                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                    GameTooltip:SetText("|cff00FF00Players wanting this item (" .. playerCount .. "):|r", 1, 1, 1)
+                    for i, playerName in ipairs(playersList) do
+                        GameTooltip:AddLine("• " .. playerName, 1, 1, 1)
+                    end
+                    GameTooltip:Show()
+                end
+            end)
+            
+            players:SetScript("OnLeave", function(self)
+                GameTooltip:Hide()
+            end)
+            
+            -- Add hover effects to the row
+            itemFrame:SetScript("OnEnter", function()
+                rowBg:SetColorTexture(0.2, 0.2, 0.2, 0.5)
+            end)
+            itemFrame:SetScript("OnLeave", function()
+                rowBg:SetColorTexture(0.05, 0.05, 0.05, 0.3)
+            end)
+            
+            yOffset = yOffset - 40
             itemCount = itemCount + 1
         end
     end
     
     if itemCount == 0 then
+        ns.Core.DebugInfo("No items to display")
         local noDataText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         noDataText:SetPoint("CENTER", 0, 0)
         noDataText:SetText("No BiS data available")
         noDataText:SetTextColor(0.7, 0.7, 0.7)
+    else
+        ns.Core.DebugDebug("Displayed %d items in boss window", itemCount)
     end
 
     if frame.scrollFrame then
@@ -348,6 +481,10 @@ end
 ------------------------------------------------------------
 -- Data Window
 ------------------------------------------------------------
+--[[
+    Create the data management window
+    This window allows users to manage BiS data
+--]]
 function ns.UI.CreateDataWindow()
     local frame = CreateFrame("Frame", "BiSWishAddon_DataWindow", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(600, 500)
@@ -642,6 +779,10 @@ end
 ------------------------------------------------------------
 -- BiS List Dialog (main list with headers/search)
 ------------------------------------------------------------
+--[[
+    Create the BiS list dialog
+    This dialog shows the complete BiS list with search functionality
+--]]
 function ns.UI.CreateBiSListDialog()
     local frame = CreateFrame("Frame", "BiSWishAddon_BiSListDialog", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(800, 600)
@@ -676,28 +817,28 @@ function ns.UI.CreateBiSListDialog()
     
     -- Update guild name display function (global)
     function ns.UI.UpdateGuildNameDisplay()
-        print("|cff39FF14BiSWishAddon|r: UpdateGuildNameDisplay called")
-        print("|cff39FF14BiSWishAddon|r: biSListDialog exists: " .. tostring(ns.UI.biSListDialog ~= nil))
+        ns.Core.DebugDebug("UpdateGuildNameDisplay called")
+        ns.Core.DebugDebug("biSListDialog exists: %s", tostring(ns.UI.biSListDialog ~= nil))
         
         if not ns.UI.biSListDialog then
-            print("|cff39FF14BiSWishAddon|r: UpdateGuildNameDisplay - biSListDialog not found")
+            ns.Core.DebugError("UpdateGuildNameDisplay - biSListDialog not found")
             return
         end
         
         if not ns.UI.biSListDialog.guildName then
-            print("|cff39FF14BiSWishAddon|r: UpdateGuildNameDisplay - guildName frame not found")
+            ns.Core.DebugError("UpdateGuildNameDisplay - guildName frame not found")
             return
         end
         
         local guildName = (BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName) or ""
-        print("|cff39FF14BiSWishAddon|r: UpdateGuildNameDisplay - guildName: '" .. tostring(guildName) .. "'")
+        ns.Core.DebugDebug("UpdateGuildNameDisplay - guildName: '%s'", tostring(guildName))
         if guildName and guildName ~= "" then
             ns.UI.biSListDialog.guildName:SetText("|cff39FF14Guild/Raid Team:|r " .. guildName)
             ns.UI.biSListDialog.guildName:Show()
-            print("|cff39FF14BiSWishAddon|r: Guild name displayed: " .. guildName)
+            ns.Core.DebugDebug("Guild name displayed: %s", guildName)
         else
             ns.UI.biSListDialog.guildName:Hide()
-            print("|cff39FF14BiSWishAddon|r: Guild name hidden (empty)")
+            ns.Core.DebugDebug("Guild name hidden (empty)")
         end
     end
     
@@ -808,17 +949,17 @@ function ns.UI.ShowBiSListDialog()
     -- Update guild name display immediately
     if ns.UI.biSListDialog and ns.UI.biSListDialog.guildName then
         local guildName = (BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName) or ""
-        print("|cff39FF14BiSWishAddon|r: Guild name debug - '" .. tostring(guildName) .. "'")
+        ns.Core.DebugDebug("Guild name debug - '%s'", tostring(guildName))
         if guildName and guildName ~= "" then
             ns.UI.biSListDialog.guildName:SetText("|cff39FF14Guild/Raid Team:|r " .. guildName)
             ns.UI.biSListDialog.guildName:Show()
-            print("|cff39FF14BiSWishAddon|r: Showing guild name: " .. guildName)
+            ns.Core.DebugDebug("Showing guild name: %s", guildName)
         else
             ns.UI.biSListDialog.guildName:Hide()
-            print("|cff39FF14BiSWishAddon|r: Hiding guild name (empty)")
+            ns.Core.DebugDebug("Hiding guild name (empty)")
         end
     else
-        print("|cff39FF14BiSWishAddon|r: Guild name frame not found!")
+        ns.Core.DebugError("Guild name frame not found!")
     end
     
     -- Also call the UpdateGuildNameDisplay function
@@ -1192,6 +1333,10 @@ end
 ------------------------------------------------------------
 -- Tooltip Hooks (safe)
 ------------------------------------------------------------
+--[[
+    Create tooltip hooks
+    Sets up tooltip functionality for UI elements
+--]]
 function ns.UI.CreateTooltipHooks()
     if ns.UI._tooltipHooked then return end
     ns.UI._tooltipHooked = true
@@ -1467,7 +1612,7 @@ function ns.UI.ShowCSVImportDialog()
     -- Create dialog if it doesn't exist
     if not ns.UI.csvImportDialog then
         local frame = CreateFrame("Frame", "BiSWishCSVImportDialog", UIParent, "BasicFrameTemplateWithInset")
-        frame:SetSize(600, 500)
+        frame:SetSize(700, 500)
         frame:SetPoint("CENTER")
         frame:SetFrameStrata("DIALOG")
         frame:Hide()
@@ -1495,15 +1640,14 @@ function ns.UI.ShowCSVImportDialog()
 
         -- Scroll Frame
         local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-        scrollFrame:SetSize(560, 300)
         scrollFrame:SetPoint("TOPLEFT", 20, -110)
-        scrollFrame:SetPoint("BOTTOMRIGHT", -20, 80)
+        scrollFrame:SetPoint("BOTTOMRIGHT", -40, 80) -- More space for scrollbar
 
         -- Text Edit Box with proper multi-line support
         local textEditBox = CreateFrame("EditBox", nil, scrollFrame)
-        textEditBox:SetSize(540, 300)
+        textEditBox:SetSize(600, 300) -- Smaller to fit within frame
         textEditBox:SetMultiLine(true)
-        textEditBox:SetAutoFocus(false)
+        textEditBox:SetAutoFocus(true)
         textEditBox:SetTextInsets(10, 10, 10, 10)
         textEditBox:SetFontObject("GameFontHighlight")
         textEditBox:SetJustifyH("LEFT")
@@ -1565,19 +1709,11 @@ function ns.UI.ShowCSVImportDialog()
             end
         end)
 
-        -- Cancel Button
-        local cancelButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-        cancelButton:SetSize(100, 30)
-        cancelButton:SetPoint("RIGHT", linkButton, "LEFT", -10, 0)
-        cancelButton:SetText("Cancel")
-        cancelButton:SetScript("OnClick", function()
-            frame:Hide()
-        end)
         
         -- Clear Button
         local clearButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
         clearButton:SetSize(80, 30)
-        clearButton:SetPoint("RIGHT", cancelButton, "LEFT", -10, 0)
+        clearButton:SetPoint("RIGHT", linkButton, "LEFT", -10, 0)
         clearButton:SetText("Clear")
         clearButton:SetScript("OnClick", function()
             textEditBox:SetText("")

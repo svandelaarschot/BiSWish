@@ -1,16 +1,49 @@
--- BiSWishAddon Events Module
+--[[
+================================================================================
+Events.lua - BiSWish Addon Event Handling Module
+================================================================================
+This module handles all WoW events for the BiSWish addon including:
+- Encounter end events for auto-opening BiS list
+- Loot events for item drop detection
+- Player and group events for raid tracking
+- Addon loading and initialization events
+
+Author: BiSWish Development Team
+Version: 1.0
+================================================================================
+--]]
+
+-- ============================================================================
+-- MODULE INITIALIZATION
+-- ============================================================================
+
+-- Get addon namespace
 local addonName, ns = ...
 
--- Events namespace
+-- Create events namespace
 ns.Events = ns.Events or {}
 
--- Initialize events
+-- ============================================================================
+-- EVENT SYSTEM INITIALIZATION
+-- ============================================================================
+
+--[[
+    Initialize events system
+    Sets up all event handlers and registers them with WoW
+--]]
 function ns.Events.Initialize()
     ns.Events.RegisterEvents()
     print("|cff39FF14BiSWishAddon|r: Events initialized!")
 end
 
--- Register event handlers
+-- ============================================================================
+-- EVENT REGISTRATION
+-- ============================================================================
+
+--[[
+    Register all event handlers
+    Creates event frame and registers all required WoW events
+--]]
 function ns.Events.RegisterEvents()
     local frame = CreateFrame("Frame")
     frame:RegisterEvent("ENCOUNTER_END")
@@ -28,7 +61,15 @@ function ns.Events.RegisterEvents()
     end)
 end
 
--- Handle events
+-- ============================================================================
+-- EVENT HANDLING
+-- ============================================================================
+
+--[[
+    Main event handler
+    @param event (string) - The event name
+    @param ... (any) - Event arguments
+--]]
 function ns.Events.HandleEvent(event, ...)
     if event == "ENCOUNTER_END" then
         ns.Events.OnEncounterEnd(...)
@@ -76,6 +117,18 @@ function ns.Events.OnPlayerRegenEnabled()
     print("|cff39FF14BiSWishAddon|r: Player out of combat!")
 end
 
+-- ============================================================================
+-- SPECIFIC EVENT HANDLERS
+-- ============================================================================
+
+--[[
+    Handle encounter end event
+    @param encounterID (number) - The encounter ID
+    @param encounterName (string) - The encounter name
+    @param difficultyID (number) - The difficulty ID
+    @param groupSize (number) - The group size
+    @param success (boolean) - Whether the encounter was successful
+--]]
 function ns.Events.OnEncounterEnd(encounterID, encounterName, difficultyID, groupSize, success)
     if success then
         print("|cff39FF14BiSWishAddon|r: Boss defeated! Showing BiS data for: " .. encounterName)
