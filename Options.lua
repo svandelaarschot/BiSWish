@@ -24,6 +24,59 @@ local addonName, ns = ...
 ns.Options = ns.Options or {}
 
 -- ============================================================================
+-- GUILD NAME UTILITY FUNCTIONS
+-- ============================================================================
+
+--[[
+    Update guild name in settings if not already set
+    This function can be called from anywhere to refresh the guild name
+--]]
+function ns.Options.UpdateGuildNameIfNeeded()
+    if not BiSWishAddonDB.options then 
+        BiSWishAddonDB.options = {} 
+    end
+    
+    -- Only update if guild name is not already set
+    if not BiSWishAddonDB.options.guildRaidTeamName or BiSWishAddonDB.options.guildRaidTeamName == "" then
+        local playerGuildName = GetGuildInfo("player")
+        if playerGuildName then
+            BiSWishAddonDB.options.guildRaidTeamName = playerGuildName
+            ns.Core.DebugInfo("Settings - Auto-detected guild name: '%s'", playerGuildName)
+            print("|cff39FF14BiSWish|r: Guild name auto-detected: " .. playerGuildName)
+            
+            -- Update the editbox if it exists
+            ns.Options.UpdateGuildNameEditBox()
+            
+            return true
+        else
+            ns.Core.DebugInfo("Settings - No guild detected")
+            return false
+        end
+    end
+    return true -- Already has guild name
+end
+
+--[[
+    Update the guild name editbox with current guild name from database
+    This function can be called to refresh the editbox display
+--]]
+function ns.Options.UpdateGuildNameEditBox()
+    local currentGuildName = BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName or ""
+    
+    -- Try multiple ways to find and update the editbox
+    if _G.BiSWishSettingsCategory and _G.BiSWishSettingsCategory.guildNameEditBox then
+        _G.BiSWishSettingsCategory.guildNameEditBox:SetText(currentGuildName)
+        ns.Core.DebugInfo("Settings - Updated global editbox with guild name: '%s'", currentGuildName)
+    end
+    
+    -- Also try to find the panel directly
+    if _G.BiSWishGuildPanel and _G.BiSWishGuildPanel.guildNameEditBox then
+        _G.BiSWishGuildPanel.guildNameEditBox:SetText(currentGuildName)
+        ns.Core.DebugInfo("Settings - Updated panel editbox with guild name: '%s'", currentGuildName)
+    end
+end
+
+-- ============================================================================
 -- DEFAULT CONFIGURATION
 -- ============================================================================
 
@@ -39,8 +92,8 @@ local defaultOptions = {
     
     -- Display Settings
     autoCloseTime = 30,              -- Auto-close time for item drop popup (seconds)
-    skipMythicPlus = true,           -- Skip auto-open and loot tracking in Mythic+ dungeons
-    disableInDungeons = true,        -- Disable BiS dialog in dungeons (default: off)
+    disableInDungeons = true,        -- Disable all BiS functionality in dungeons (default: on)
+    itemDropdownHeight = 200,        -- Height of item dropdown box (pixels)
     
     -- Debug Settings
     debugMode = false,               -- Enable debug output
@@ -50,6 +103,38 @@ local defaultOptions = {
 -- ============================================================================
 -- CORE OPTIONS FUNCTIONS
 -- ============================================================================
+
+--[[
+    Create a footer for settings panels
+    @param panel (Frame) - The panel to add the footer to
+--]]
+function ns.Options.CreateFooter(panel)
+    local footer = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    footer:SetPoint("BOTTOMLEFT", 16, 16)
+    footer:SetWidth(580)
+    footer:SetJustifyH("LEFT")
+    
+    -- Get dynamic version from .toc file with fallback
+    local version = "1.1"
+    local author = "Alvarín-Silvermoon"
+    
+    -- Try to get metadata, but use fallbacks if it fails
+    if GetAddOnMetadata then
+        local addonName = "BiSWish"
+        local metadataVersion = GetAddOnMetadata(addonName, "Version")
+        local metadataAuthor = GetAddOnMetadata(addonName, "Author")
+        
+        if metadataVersion then
+            version = metadataVersion
+        end
+        if metadataAuthor then
+            author = metadataAuthor
+        end
+    end
+    
+    footer:SetText("|cff39FF14BiSWish|r - Best in Slot Wishlist Addon | Version " .. version .. " | by " .. author .. " | Use /bis help for commands")
+    footer:SetTextColor(0.7, 0.7, 0.7)
+end
 
 --[[
     Initialize options with default values if they don't exist
@@ -148,9 +233,29 @@ function ns.Options.RegisterSettings()
         -- Description
         local descRoot = rootPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         descRoot:SetPoint("TOPLEFT", titleRoot, "BOTTOMLEFT", 0, -8)
-        descRoot:SetWidth(500)
+        descRoot:SetWidth(580)
         descRoot:SetJustifyH("LEFT")
         descRoot:SetText("BiS Wishlist addon for raid loot tracking. Use /bis for commands.")
+        
+        -- Usage guide
+        local usageGuide = rootPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        usageGuide:SetPoint("TOPLEFT", descRoot, "BOTTOMLEFT", 0, -15)
+        usageGuide:SetWidth(580)
+        usageGuide:SetJustifyH("LEFT")
+        usageGuide:SetText("|cffFFD700Quick Start:|r\n" ..
+                          "1. Set your guild name below (or use Auto-fill)\n" ..
+                          "2. Import your wishlist data via Data Management\n" ..
+                          "3. Use /bis to open your BiS list during raids\n" ..
+                          "4. The addon will auto-detect wanted items when they drop\n\n" ..
+                          "|cffFFD700Main Commands:|r\n" ..
+                          "• /bis - Open your BiS wishlist\n" ..
+                          "• /bis data - Import/export data\n" ..
+                          "• /bis options - Open these settings\n" ..
+                          "• /bis help - Show all commands")
+        usageGuide:SetTextColor(0.9, 0.9, 0.9)
+        
+        -- Add footer to main panel
+        ns.Options.CreateFooter(rootPanel)
         
         -- Create subpanels
         local guildPanel = ns.Options.CreateGuildPanel()
@@ -307,6 +412,18 @@ function ns.Options.CreateGuildPanel()
     local panel = CreateFrame("Frame", "BiSWishGuildPanel")
     panel.name = "Guild Raid"
     
+    -- Add OnShow event to auto-detect guild name when panel is opened
+    panel:SetScript("OnShow", function()
+        -- Use a timer to ensure the panel is fully loaded
+        C_Timer.After(0.1, function()
+            -- Try to auto-detect guild name
+            ns.Options.UpdateGuildNameIfNeeded()
+            
+            -- Always update the edit box with current guild name from database
+            ns.Options.UpdateGuildNameEditBox()
+        end)
+    end)
+    
     -- Title
     local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", 16, -16)
@@ -392,18 +509,25 @@ function ns.Options.CreateGuildPanel()
     guildNameRefreshButton:SetSize(80, 30)
     guildNameRefreshButton:SetText("Auto-fill")
     guildNameRefreshButton:SetScript("OnClick", function()
+        -- Force update guild name (even if already set)
         local playerGuildName = GetGuildInfo("player")
         if playerGuildName then
-            guildNameEditBox:SetText(playerGuildName)
             if not BiSWishAddonDB.options then BiSWishAddonDB.options = {} end
             BiSWishAddonDB.options.guildRaidTeamName = playerGuildName
+            guildNameEditBox:SetText(playerGuildName)
             ns.Core.DebugInfo("Settings - Manually refreshed guild name: '%s'", playerGuildName)
+            print("|cff39FF14BiSWish|r: Guild name auto-filled: " .. playerGuildName)
+            
+            -- Also update using the utility function
+            ns.Options.UpdateGuildNameEditBox()
         else
             ns.Core.DebugInfo("Settings - No guild detected when refreshing")
+            print("|cffFF0000BiSWish|r: No guild detected. Make sure you're in a guild!")
         end
     end)
     
     -- Store reference to the edit box for later updates
+    panel.guildNameEditBox = guildNameEditBox
     if _G.BiSWishSettingsCategory then
         _G.BiSWishSettingsCategory.guildNameEditBox = guildNameEditBox
     end
@@ -479,34 +603,7 @@ function ns.Options.CreateGuildPanel()
     
     yOffset = yOffset - 80
     
-    -- Skip Mythic+ checkbox
-    local skipMythicPlusCheckbox = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
-    skipMythicPlusCheckbox:SetPoint("TOPLEFT", 20, yOffset)
-    skipMythicPlusCheckbox:SetSize(20, 20)
-    skipMythicPlusCheckbox:SetChecked(BiSWishAddonDB.options and BiSWishAddonDB.options.skipMythicPlus or true)
-    
-    skipMythicPlusCheckbox:SetScript("OnClick", function(self)
-        if not BiSWishAddonDB.options then BiSWishAddonDB.options = {} end
-        BiSWishAddonDB.options.skipMythicPlus = self:GetChecked()
-        ns.Core.DebugInfo("Skip Mythic+ setting changed to: %s", tostring(self:GetChecked()))
-    end)
-    
-    local skipMythicPlusLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    skipMythicPlusLabel:SetPoint("LEFT", skipMythicPlusCheckbox, "RIGHT", 5, 0)
-    skipMythicPlusLabel:SetText("Skip auto-open and loot tracking in Mythic+ dungeons")
-    skipMythicPlusLabel:SetTextColor(1, 1, 1)
-    
-    -- Skip Mythic+ description
-    local skipMythicPlusDesc = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    skipMythicPlusDesc:SetPoint("TOPLEFT", skipMythicPlusCheckbox, "BOTTOMLEFT", 0, -5)
-    skipMythicPlusDesc:SetWidth(540)
-    skipMythicPlusDesc:SetJustifyH("LEFT")
-    skipMythicPlusDesc:SetText("Prevents the BiS list and loot tracking from appearing during Mythic+ dungeon runs.")
-    skipMythicPlusDesc:SetTextColor(0.7, 0.7, 0.7)
-    
-    yOffset = yOffset - 60
-    
-    -- Disable in dungeons checkbox
+    -- Disable in dungeons checkbox (combined setting)
     local disableInDungeonsCheckbox = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
     disableInDungeonsCheckbox:SetPoint("TOPLEFT", 20, yOffset)
     disableInDungeonsCheckbox:SetSize(20, 20)
@@ -520,7 +617,7 @@ function ns.Options.CreateGuildPanel()
     
     local disableInDungeonsLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     disableInDungeonsLabel:SetPoint("LEFT", disableInDungeonsCheckbox, "RIGHT", 5, 0)
-    disableInDungeonsLabel:SetText("Disable BiS dialog in dungeons (including Mythic+)")
+    disableInDungeonsLabel:SetText("Disable BiS functionality in dungeons")
     disableInDungeonsLabel:SetTextColor(1, 1, 1)
     
     -- Disable in dungeons description
@@ -528,8 +625,11 @@ function ns.Options.CreateGuildPanel()
     disableInDungeonsDesc:SetPoint("TOPLEFT", disableInDungeonsCheckbox, "BOTTOMLEFT", 0, -5)
     disableInDungeonsDesc:SetWidth(540)
     disableInDungeonsDesc:SetJustifyH("LEFT")
-    disableInDungeonsDesc:SetText("Prevents the BiS dialog from opening when using /bis show in dungeons. Recommended for M+ runs.")
+    disableInDungeonsDesc:SetText("Prevents all BiS functionality in dungeons (Mythic+, normal dungeons): auto-open, loot tracking, and /bis commands. Recommended for M+ runs.")
     disableInDungeonsDesc:SetTextColor(0.7, 0.7, 0.7)
+    
+    -- Add footer
+    ns.Options.CreateFooter(panel)
     
     return panel
 end
@@ -588,6 +688,59 @@ function ns.Options.CreateDisplayPanel()
     autoCloseDesc:SetJustifyH("LEFT")
     autoCloseDesc:SetText("How long the item drop popup stays open before automatically closing. Set to 0 to disable auto-close.")
     autoCloseDesc:SetTextColor(0.7, 0.7, 0.7)
+    
+    yOffset = yOffset - 100
+    
+    -- Item dropdown height
+    local dropdownHeightLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    dropdownHeightLabel:SetPoint("TOPLEFT", 20, yOffset)
+    dropdownHeightLabel:SetText("Item dropdown box height (pixels):")
+    
+    local dropdownHeightSlider = CreateFrame("Slider", nil, panel, "OptionsSliderTemplate")
+    dropdownHeightSlider:SetPoint("TOPLEFT", dropdownHeightLabel, "BOTTOMLEFT", 0, -10)
+    dropdownHeightSlider:SetSize(300, 20)
+    dropdownHeightSlider:SetMinMaxValues(100, 500)
+    dropdownHeightSlider:SetValue(BiSWishAddonDB.options and BiSWishAddonDB.options.itemDropdownHeight or 200)
+    dropdownHeightSlider:SetValueStep(25)
+    dropdownHeightSlider:SetObeyStepOnDrag(true)
+    dropdownHeightSlider.Low:SetText("100px")
+    dropdownHeightSlider.High:SetText("500px")
+    
+    local dropdownHeightValue = dropdownHeightSlider:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    dropdownHeightValue:SetPoint("LEFT", dropdownHeightSlider, "RIGHT", 15, 0)
+    dropdownHeightValue:SetText(tostring(BiSWishAddonDB.options and BiSWishAddonDB.options.itemDropdownHeight or 200) .. "px")
+    
+    dropdownHeightSlider:SetScript("OnValueChanged", function(self, value)
+        if not BiSWishAddonDB.options then BiSWishAddonDB.options = {} end
+        BiSWishAddonDB.options.itemDropdownHeight = value
+        dropdownHeightValue:SetText(tostring(value) .. "px")
+        ns.Core.DebugInfo("Item dropdown height changed to: %d pixels", value)
+        
+        -- Update existing item search dialog if it's open
+        if ns.UI and ns.UI.itemSearchDialog and ns.UI.itemSearchDialog.scrollFrame then
+            ns.UI.itemSearchDialog.scrollFrame:SetHeight(value)
+        end
+        
+        -- Update existing item drop popup if it's open
+        if ns.UI and ns.UI.itemDropPopup then
+            local popupHeight = math.max(180, value + 80) -- Add extra space for title and buttons
+            ns.UI.itemDropPopup:SetHeight(popupHeight)
+            if ns.UI.itemDropPopup.scrollFrame then
+                ns.UI.itemDropPopup.scrollFrame:SetHeight(value)
+            end
+        end
+    end)
+    
+    -- Dropdown height description
+    local dropdownHeightDesc = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    dropdownHeightDesc:SetPoint("TOPLEFT", dropdownHeightSlider, "BOTTOMLEFT", 0, -5)
+    dropdownHeightDesc:SetWidth(540)
+    dropdownHeightDesc:SetJustifyH("LEFT")
+    dropdownHeightDesc:SetText("Controls the height of item dropdown boxes in the BiS list interface and item drop popups. Larger values show more items at once.")
+    dropdownHeightDesc:SetTextColor(0.7, 0.7, 0.7)
+    
+    -- Add footer
+    ns.Options.CreateFooter(panel)
     
     return panel
 end
@@ -668,6 +821,9 @@ function ns.Options.CreateDebugPanel()
     debugLevelDesc:SetJustifyH("LEFT")
     debugLevelDesc:SetText("1=ERROR, 2=WARNING, 3=INFO, 4=DEBUG, 5=VERBOSE. Higher levels show more detailed information.")
     debugLevelDesc:SetTextColor(0.7, 0.7, 0.7)
+    
+    -- Add footer
+    ns.Options.CreateFooter(panel)
     
     return panel
 end
@@ -781,6 +937,9 @@ function ns.Options.CreateDataPanel()
         BiSWishAddonDB.items = {}
         print("|cff39FF14BiSWishAddon|r: Cleared all BiS data!")
     end)
+    
+    -- Add footer
+    ns.Options.CreateFooter(panel)
     
     return panel
 end

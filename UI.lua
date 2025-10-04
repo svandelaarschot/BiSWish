@@ -25,6 +25,42 @@ local addonName, ns = ...
 ns.UI = ns.UI or {}
 
 -- ============================================================================
+-- UI UTILITY FUNCTIONS
+-- ============================================================================
+
+--[[
+    Create a footer for dialogs
+    @param frame (Frame) - The frame to add the footer to
+--]]
+function ns.UI.CreateFooter(frame)
+    local footer = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    footer:SetPoint("BOTTOMLEFT", 16, 16)
+    footer:SetWidth(580)
+    footer:SetJustifyH("LEFT")
+    
+    -- Get dynamic version from .toc file with fallback
+    local version = "1.1"
+    local author = "Alvarín-Silvermoon"
+    
+    -- Try to get metadata, but use fallbacks if it fails
+    if GetAddOnMetadata then
+        local addonName = "BiSWish"
+        local metadataVersion = GetAddOnMetadata(addonName, "Version")
+        local metadataAuthor = GetAddOnMetadata(addonName, "Author")
+        
+        if metadataVersion then
+            version = metadataVersion
+        end
+        if metadataAuthor then
+            author = metadataAuthor
+        end
+    end
+    
+    footer:SetText("|cff39FF14BiSWish|r - Best in Slot Wishlist Addon | Version " .. version .. " | by " .. author .. " | Use /bis help for commands")
+    footer:SetTextColor(0.7, 0.7, 0.7)
+end
+
+-- ============================================================================
 -- CONSTANTS AND HELPERS
 -- ============================================================================
 local PLACEHOLDER_ICON = "Interface\\Icons\\INV_Misc_Orb_01"
@@ -1433,17 +1469,14 @@ function ns.UI.CheckBossKillAutoOpen()
         return
     end
     
-    -- Check if we should skip Mythic+ dungeons
-    local skipMythicPlus = BiSWishAddonDB.options and BiSWishAddonDB.options.skipMythicPlus
-    if skipMythicPlus then
+    -- Check if we should disable all functionality in dungeons
+    local disableInDungeons = BiSWishAddonDB.options and BiSWishAddonDB.options.disableInDungeons
+    if disableInDungeons then
         local inInstance, instanceType = IsInInstance()
         if instanceType == "party" then
-            local difficultyID = select(3, GetInstanceInfo())
-            if difficultyID == 8 then
-                -- This is a Mythic+ dungeon, don't auto-open
-                ns.Core.DebugInfo("Mythic+ detected, skipping guild raid auto-open")
-                return
-            end
+            -- We're in a dungeon, don't auto-open
+            ns.Core.DebugInfo("Dungeon detected, skipping guild raid auto-open")
+            return
         end
     end
     
@@ -1545,7 +1578,11 @@ function ns.UI.ShowItemSearchDialog(targetEditBox)
 
     local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", 20, -120)
+    
+    -- Use configurable height for the dropdown
+    local dropdownHeight = BiSWishAddonDB.options and BiSWishAddonDB.options.itemDropdownHeight or 200
     scrollFrame:SetPoint("BOTTOMRIGHT", -20, 60)
+    scrollFrame:SetHeight(dropdownHeight)
 
     local content = CreateFrame("Frame")
     content:SetSize(640, 1)
@@ -1849,7 +1886,11 @@ function ns.UI.ShowItemDropPopup(items)
     end
     
     local frame = CreateFrame("Frame", "BiSWishAddon_ItemDropPopup", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(350, 180)
+    
+    -- Use configurable height for the popup
+    local dropdownHeight = BiSWishAddonDB.options and BiSWishAddonDB.options.itemDropdownHeight or 200
+    local popupHeight = math.max(180, dropdownHeight + 80) -- Add extra space for title and buttons
+    frame:SetSize(350, popupHeight)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -1872,12 +1913,12 @@ function ns.UI.ShowItemDropPopup(items)
     
     -- Scroll frame for items list
     local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetSize(300, 100)
-    scrollFrame:SetPoint("TOP", 0, -40)
+    scrollFrame:SetSize(280, dropdownHeight)
+    scrollFrame:SetPoint("TOPLEFT", 15, -40)
     
     -- Items content frame
     local itemsContent = CreateFrame("Frame", nil, scrollFrame)
-    itemsContent:SetSize(300, 1)
+    itemsContent:SetSize(260, 1)
     scrollFrame:SetScrollChild(itemsContent)
     
     local yOffset = -10
@@ -1893,8 +1934,8 @@ function ns.UI.ShowItemDropPopup(items)
             
             -- Item container
             local itemContainer = CreateFrame("Frame", nil, itemsContent)
-            itemContainer:SetSize(300, 35)
-            itemContainer:SetPoint("TOPLEFT", 10, yOffset)
+            itemContainer:SetSize(260, 35)
+            itemContainer:SetPoint("TOPLEFT", 5, yOffset)
             
             -- Item icon
             local itemIcon = itemContainer:CreateTexture(nil, "OVERLAY")
@@ -1937,15 +1978,15 @@ function ns.UI.ShowItemDropPopup(items)
             local itemInfo = itemContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
             itemInfo:SetPoint("LEFT", itemIcon, "RIGHT", 12, 0)
             itemInfo:SetJustifyH("LEFT")
-            itemInfo:SetWidth(200)
+            itemInfo:SetWidth(175)
             itemInfo:SetWordWrap(true)
             itemInfo:SetText("|cffFFD700" .. itemName .. "|r")
             
             -- Players count
             local playersCount = itemContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            playersCount:SetPoint("RIGHT", -10, 0)
+            playersCount:SetPoint("RIGHT", -25, 0)
             playersCount:SetJustifyH("RIGHT")
-            playersCount:SetWidth(60)
+            playersCount:SetWidth(50)
             playersCount:SetText("|cff39FF14" .. #interestedPlayers .. "|r")
             
             -- Add tooltip to player count

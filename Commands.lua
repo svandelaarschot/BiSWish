@@ -96,6 +96,8 @@ function ns.Commands.HandleCommand(msg)
         ns.Commands.TestItemDrop()
     elseif command == "debug" then
         ns.Commands.ToggleDebugMode()
+    elseif command == "guild" then
+        ns.Commands.DetectGuildName()
     elseif command == "debuglevel" then
         ns.Commands.SetDebugLevel(args)
     else
@@ -127,6 +129,7 @@ function ns.Commands.ShowHelp()
     ns.Core.DebugInfo("/bis testdrop - Test item drop popup")
     ns.Core.DebugInfo("/bis debug - Toggle debug mode")
     ns.Core.DebugInfo("/bis debuglevel <1-5> - Set debug level (1=ERROR, 2=WARNING, 3=INFO, 4=DEBUG, 5=VERBOSE)")
+    ns.Core.DebugInfo("/bis guild - Auto-detect and set guild name")
     ns.Core.DebugInfo("/bis help - Show this help")
 end
 
@@ -372,6 +375,23 @@ function ns.Commands.SetDebugLevel(args)
         ns.Core.SetDebugLevel(level)
     else
         print("|cffFF0000BiSWishAddon|r: Debug system not available")
+    end
+end
+
+--[[
+    Detect and set guild name
+    Manual command to trigger guild name detection
+--]]
+function ns.Commands.DetectGuildName()
+    if ns.Options and ns.Options.UpdateGuildNameIfNeeded then
+        local success = ns.Options.UpdateGuildNameIfNeeded()
+        if success then
+            print("|cff39FF14BiSWish|r: Guild name detection completed!")
+        else
+            print("|cffFF0000BiSWish|r: No guild detected. Make sure you're in a guild!")
+        end
+    else
+        print("|cffFF0000BiSWish|r: Options module not available!")
     end
 end
 

@@ -55,6 +55,13 @@ function ns.Initialize()
     -- Initialize slash commands
     ns.Commands.Initialize()
     
+    -- Try to auto-detect guild name after a short delay
+    C_Timer.After(2.0, function()
+        if ns.Options and ns.Options.UpdateGuildNameIfNeeded then
+            ns.Options.UpdateGuildNameIfNeeded()
+        end
+    end)
+    
     -- Notify user of successful initialization
     print("|cff39FF14BiSWishAddon|r: All modules initialized!")
 end

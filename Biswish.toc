@@ -2,7 +2,7 @@
 ## Title: |cff39FF14Biswish|r
 ## Notes: BiS Wishlist addon for raid loot tracking
 ## Author: Alvarín-Silvermoon
-## Version: 1.0
+## Version: 1.1
 ## SavedVariables: BiSWishAddonDB
 ## IconTexture: Interface\Icons\inv_sword_01
 ## X-Curse-Project-ID: biswish
