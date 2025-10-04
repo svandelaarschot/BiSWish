@@ -421,6 +421,15 @@ function ns.Options.CreateGuildPanel()
             
             -- Always update the edit box with current guild name from database
             ns.Options.UpdateGuildNameEditBox()
+            
+            -- Force update the editbox one more time after a short delay
+            C_Timer.After(0.2, function()
+                if panel.guildNameEditBox then
+                    local currentGuildName = BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName or ""
+                    panel.guildNameEditBox:SetText(currentGuildName)
+                    ns.Core.DebugInfo("Settings - Final editbox update with guild name: '%s'", currentGuildName)
+                end
+            end)
         end)
     end)
     
