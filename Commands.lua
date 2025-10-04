@@ -259,6 +259,11 @@ end
 
 -- Show options window
 function ns.Commands.ShowOptions()
+    -- Update guild name in settings before opening
+    if ns.Options and ns.Options.UpdateGuildNameInSettings then
+        ns.Options.UpdateGuildNameInSettings()
+    end
+    
     -- Open the correct settings and go directly to BiSWish tab
     if Settings and Settings.OpenToCategory then
         -- Retail (Dragonflight+) - use the saved category reference

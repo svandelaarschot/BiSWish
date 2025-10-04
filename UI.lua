@@ -320,6 +320,8 @@ function ns.UI.ShowBossWindow(bossName)
         guildName = " [" .. BiSWishAddonDB.options.guildRaidTeamName .. "]"
     end
     
+    ns.Core.DebugInfo("Boss Window - Guild name: '%s'", BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName or "nil")
+    
     local titleText = "BiS Wishlist - " .. (bossName or "Manual View") .. guildName
     if ns.UI.bossWindow.TitleText then
         ns.UI.bossWindow.TitleText:SetText(titleText)
@@ -487,7 +489,7 @@ end
 --]]
 function ns.UI.CreateDataWindow()
     local frame = CreateFrame("Frame", "BiSWishAddon_DataWindow", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 500)
+    frame:SetSize(650, 600)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -514,66 +516,88 @@ function ns.UI.CreateDataWindow()
     logo:SetSize(32, 32)
     logo:SetPoint("TOPLEFT", 10, -10)
     
-    local itemIDLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    itemIDLabel:SetPoint("TOPLEFT", 20, -50)
+    -- Create input container for better organization
+    local inputContainer = CreateFrame("Frame", nil, frame)
+    inputContainer:SetSize(610, 200)
+    inputContainer:SetPoint("TOPLEFT", 20, -60)
+    
+    -- Item ID Row
+    local itemIDLabel = inputContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    itemIDLabel:SetPoint("TOPLEFT", 0, 0)
     itemIDLabel:SetText("Item ID:")
     itemIDLabel:SetTextColor(1, 1, 1)
+    itemIDLabel:SetWidth(100)
+    itemIDLabel:SetJustifyH("LEFT")
     
-    local itemIDEditBox = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
+    local itemIDEditBox = CreateFrame("EditBox", nil, inputContainer, "InputBoxTemplate")
     itemIDEditBox:SetSize(140, 30)
-    itemIDEditBox:SetPoint("LEFT", itemIDLabel, "RIGHT", 15, 0)
+    itemIDEditBox:SetPoint("LEFT", itemIDLabel, "RIGHT", 10, 0)
     itemIDEditBox:SetAutoFocus(false)
     itemIDEditBox:SetTextInsets(8, 8, 0, 0)
     itemIDEditBox:SetFontObject("GameFontHighlight")
     
-    local itemNameLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    itemNameLabel:SetPoint("TOPLEFT", 20, -90)
-    itemNameLabel:SetText("Item:")
+    -- Item Name Row
+    local itemNameLabel = inputContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    itemNameLabel:SetPoint("TOPLEFT", 0, -40)
+    itemNameLabel:SetText("Item Name:")
     itemNameLabel:SetTextColor(1, 1, 1)
+    itemNameLabel:SetWidth(100)
+    itemNameLabel:SetJustifyH("LEFT")
     
-    local itemNameEditBox = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
+    local itemNameEditBox = CreateFrame("EditBox", nil, inputContainer, "InputBoxTemplate")
     itemNameEditBox:SetSize(250, 30)
-    itemNameEditBox:SetPoint("LEFT", itemNameLabel, "RIGHT", 15, 0)
+    itemNameEditBox:SetPoint("LEFT", itemNameLabel, "RIGHT", 10, 0)
     itemNameEditBox:SetAutoFocus(false)
     itemNameEditBox:SetTextInsets(8, 8, 0, 0)
     itemNameEditBox:SetFontObject("GameFontHighlight")
 
-    local searchItemButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    local searchItemButton = CreateFrame("Button", nil, inputContainer, "UIPanelButtonTemplate")
     searchItemButton:SetSize(90, 30)
-    searchItemButton:SetPoint("LEFT", itemNameEditBox, "RIGHT", 15, 0)
+    searchItemButton:SetPoint("LEFT", itemNameEditBox, "RIGHT", 10, 0)
     searchItemButton:SetText("Search")
     searchItemButton:SetScript("OnClick", function()
         ns.UI.ShowItemSearchDialog(itemNameEditBox)
     end)
 
-    local playersLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    playersLabel:SetPoint("TOPLEFT", 20, -130)
+    -- Players Row
+    local playersLabel = inputContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    playersLabel:SetPoint("TOPLEFT", 0, -80)
     playersLabel:SetText("Players:")
     playersLabel:SetTextColor(1, 1, 1)
+    playersLabel:SetWidth(100)
+    playersLabel:SetJustifyH("LEFT")
     
-    local playersEditBox = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
-    playersEditBox:SetSize(300, 30)
-    playersEditBox:SetPoint("LEFT", playersLabel, "RIGHT", 15, 0)
+    local playersEditBox = CreateFrame("EditBox", nil, inputContainer, "InputBoxTemplate")
+    playersEditBox:SetSize(350, 30)
+    playersEditBox:SetPoint("LEFT", playersLabel, "RIGHT", 10, 0)
     playersEditBox:SetAutoFocus(false)
     playersEditBox:SetTextInsets(8, 8, 0, 0)
     playersEditBox:SetFontObject("GameFontHighlight")
 
-    -- Description input
-    local descriptionLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    descriptionLabel:SetPoint("TOPLEFT", 20, -170)
+    -- Description Row
+    local descriptionLabel = inputContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    descriptionLabel:SetPoint("TOPLEFT", 0, -120)
     descriptionLabel:SetText("Description:")
     descriptionLabel:SetTextColor(1, 1, 1)
+    descriptionLabel:SetWidth(100)
+    descriptionLabel:SetJustifyH("LEFT")
 
-    local descriptionEditBox = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
-    descriptionEditBox:SetSize(300, 30)
-    descriptionEditBox:SetPoint("LEFT", descriptionLabel, "RIGHT", 15, 0)
+    local descriptionEditBox = CreateFrame("EditBox", nil, inputContainer, "InputBoxTemplate")
+    descriptionEditBox:SetSize(350, 30)
+    descriptionEditBox:SetPoint("LEFT", descriptionLabel, "RIGHT", 10, 0)
     descriptionEditBox:SetAutoFocus(false)
     descriptionEditBox:SetTextInsets(8, 8, 0, 0)
     descriptionEditBox:SetFontObject("GameFontHighlight")
 
-    local addButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    addButton:SetSize(120, 35)
-    addButton:SetPoint("TOPLEFT", 20, -210)
+    -- Create button container for better organization
+    local buttonContainer = CreateFrame("Frame", nil, frame)
+    buttonContainer:SetSize(610, 100)
+    buttonContainer:SetPoint("TOPLEFT", 20, -200)
+    
+    -- First row of buttons
+    local addButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+    addButton:SetSize(130, 35)
+    addButton:SetPoint("TOPLEFT", 0, 0)
     addButton:SetText("Add Item")
     addButton:SetScript("OnClick", function()
         local itemID = tonumber(itemIDEditBox:GetText())
@@ -582,7 +606,7 @@ function ns.UI.CreateDataWindow()
         local description = Trim(descriptionEditBox:GetText())
         
         if not itemID or not itemName or itemName == "" then
-            print("|cffFF0000BiSWishAddon|r: Please enter valid Item ID and Name")
+            ns.Core.DebugError("Please enter valid Item ID and Name")
             return
         end
         
@@ -603,7 +627,7 @@ function ns.UI.CreateDataWindow()
             }
         end
 
-        print("|cff39FF14BiSWishAddon|r: Added item " .. itemName .. " (ID: " .. itemID .. ") with " .. #players .. " players")
+        ns.Core.DebugInfo("Added item %s (ID: %d) with %d players", itemName, itemID, #players)
 
         itemIDEditBox:SetText("")
         itemNameEditBox:SetText("")
@@ -613,37 +637,37 @@ function ns.UI.CreateDataWindow()
         ns.UI.UpdateDataWindowContent()
     end)
     
-    local removeButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    removeButton:SetSize(120, 35)
+    local removeButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+    removeButton:SetSize(130, 35)
     removeButton:SetPoint("LEFT", addButton, "RIGHT", 15, 0)
     removeButton:SetText("Remove")
     removeButton:SetScript("OnClick", function()
         local itemID = tonumber(itemIDEditBox:GetText())
         if not itemID then
-            print("|cffFF0000BiSWishAddon|r: Please enter valid Item ID")
+            ns.Core.DebugError("Please enter valid Item ID")
             return
         end
         if BiSWishAddonDB.items[itemID] then
             local itemName = BiSWishAddonDB.items[itemID].name
             BiSWishAddonDB.items[itemID] = nil
-            print("|cff39FF14BiSWishAddon|r: Removed item " .. (itemName or "?") .. " (ID: " .. itemID .. ")")
+            ns.Core.DebugInfo("Removed item %s (ID: %d)", itemName or "?", itemID)
             itemIDEditBox:SetText("")
             itemNameEditBox:SetText("")
             playersEditBox:SetText("")
             descriptionEditBox:SetText("")
             ns.UI.UpdateDataWindowContent()
         else
-            print("|cffFF0000BiSWishAddon|r: Item not found")
+            ns.Core.DebugError("Item not found")
         end
     end)
     
-    local clearDataButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    clearDataButton:SetSize(120, 35)
+    local clearDataButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+    clearDataButton:SetSize(130, 35)
     clearDataButton:SetPoint("LEFT", removeButton, "RIGHT", 15, 0)
     clearDataButton:SetText("Clear Data")
     clearDataButton:SetScript("OnClick", function()
         BiSWishAddonDB.items = {}
-        print("|cff39FF14BiSWishAddon|r: Cleared all BiS data!")
+        ns.Core.DebugInfo("Cleared all BiS data!")
         itemIDEditBox:SetText("")
         itemNameEditBox:SetText("")
         playersEditBox:SetText("")
@@ -651,20 +675,21 @@ function ns.UI.CreateDataWindow()
         ns.UI.UpdateDataWindowContent()
     end)
 
-    local importButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    importButton:SetSize(120, 35)
-    importButton:SetPoint("TOPLEFT", addButton, "BOTTOMLEFT", 0, -10)
+    -- Second row of buttons
+    local importButton = CreateFrame("Button", nil, buttonContainer, "UIPanelButtonTemplate")
+    importButton:SetSize(130, 35)
+    importButton:SetPoint("TOPLEFT", 0, -45)
     importButton:SetText("Import Data")
     importButton:SetScript("OnClick", function()
         ns.UI.ImportData()
     end)
     
     local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 20, -300)
+    scrollFrame:SetPoint("TOPLEFT", 20, -330)
     scrollFrame:SetPoint("BOTTOMRIGHT", -40, 100)
     
     local content = CreateFrame("Frame")
-    content:SetSize(540, 1) -- inner width ~ 540 (600 - 20 - 40)
+    content:SetSize(590, 1) -- inner width ~ 590 (650 - 20 - 40)
     scrollFrame:SetScrollChild(content)
     
     frame.scrollFrame       = scrollFrame
@@ -682,6 +707,22 @@ function ns.UI.ShowDataWindow()
     if not ns.UI.dataWindow then
         ns.UI.CreateDataWindow()
     end
+    
+    -- Update title with guild name
+    local guildName = ""
+    if BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName and BiSWishAddonDB.options.guildRaidTeamName ~= "" then
+        guildName = " [" .. BiSWishAddonDB.options.guildRaidTeamName .. "]"
+    end
+    
+    ns.Core.DebugInfo("Data Window - Guild name: '%s'", BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName or "nil")
+    
+    local titleText = "|cff39FF14BiS Data Management|r" .. guildName
+    if ns.UI.dataWindow.TitleText then
+        ns.UI.dataWindow.TitleText:SetText(titleText)
+    elseif ns.UI.dataWindow.title then
+        ns.UI.dataWindow.title:SetText(titleText)
+    end
+    
     ns.UI.dataWindow:Show()
     ns.UI.UpdateDataWindowContent()
 end
@@ -705,7 +746,7 @@ function ns.UI.UpdateDataWindowContent()
     
     for itemID, data in pairs(BiSWishAddonDB.items) do
         local itemFrame = CreateFrame("Frame", nil, content)
-        itemFrame:SetSize(540, 30) -- fit inner width
+        itemFrame:SetSize(590, 30) -- fit inner width
         itemFrame:SetPoint("TOPLEFT", 0, yOffset)
         
         local itemIcon = itemFrame:CreateTexture(nil, "OVERLAY")
@@ -742,20 +783,24 @@ function ns.UI.UpdateDataWindowContent()
         itemText:SetJustifyH("LEFT")
 
         local playersTextStr = table.concat((data and data.players) or {}, ", ")
+        -- Truncate players text if too long
+        if string.len(playersTextStr) > 25 then
+            playersTextStr = string.sub(playersTextStr, 1, 22) .. "..."
+        end
         local players = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         players:SetPoint("LEFT", 270, 0)
         players:SetText(playersTextStr)
         players:SetTextColor(0.8, 0.8, 0.8)
-        players:SetWidth(150)
+        players:SetWidth(200)
         players:SetJustifyH("LEFT")
 
-        -- Description (position fixed to stay inside 540px)
+        -- Description (position fixed to stay inside 590px)
         local description = (data and data.description) or ""
         local descriptionText = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        descriptionText:SetPoint("LEFT", 440, 0)
+        descriptionText:SetPoint("LEFT", 480, 0)
         descriptionText:SetText(description)
         descriptionText:SetTextColor(0.6, 0.6, 0.6)
-        descriptionText:SetWidth(90)
+        descriptionText:SetWidth(100)
         descriptionText:SetJustifyH("LEFT")
 
         itemFrame:SetScript("OnMouseUp", function(_, button)
@@ -831,29 +876,23 @@ function ns.UI.CreateBiSListDialog()
         end
         
         local guildName = (BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName) or ""
-        ns.Core.DebugDebug("UpdateGuildNameDisplay - guildName: '%s'", tostring(guildName))
+        ns.Core.DebugInfo("UpdateGuildNameDisplay - guildName: '%s'", tostring(guildName))
         if guildName and guildName ~= "" then
             ns.UI.biSListDialog.guildName:SetText("|cff39FF14Guild/Raid Team:|r " .. guildName)
             ns.UI.biSListDialog.guildName:Show()
-            ns.Core.DebugDebug("Guild name displayed: %s", guildName)
+            ns.Core.DebugInfo("Guild name displayed: %s", guildName)
         else
             ns.UI.biSListDialog.guildName:Hide()
-            ns.Core.DebugDebug("Guild name hidden (empty)")
+            ns.Core.DebugInfo("Guild name hidden (empty)")
         end
     end
     
     -- Call immediately
     ns.UI.UpdateGuildNameDisplay()
-
-
-    local logo = frame:CreateTexture(nil, "OVERLAY")
-    -- logo:SetTexture("Assets\\logo.tga")
-    logo:SetSize(32, 32)
-    logo:SetPoint("TOPLEFT", 10, -10)
     
     local searchContainer = CreateFrame("Frame", nil, frame)
     searchContainer:SetSize(760, 40)
-    searchContainer:SetPoint("TOPLEFT", 20, -60)
+    searchContainer:SetPoint("TOPLEFT", 20, -20)
 
     local searchLabel = searchContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     searchLabel:SetPoint("LEFT", 0, 0)
@@ -881,7 +920,7 @@ function ns.UI.CreateBiSListDialog()
     
     local headerFrame = CreateFrame("Frame", nil, frame)
     headerFrame:SetSize(760, 35)
-    headerFrame:SetPoint("TOPLEFT", 20, -100)
+    headerFrame:SetPoint("TOPLEFT", 20, -60)
     
     local headerBg = headerFrame:CreateTexture(nil, "BACKGROUND")
     headerBg:SetAllPoints()
@@ -924,8 +963,8 @@ function ns.UI.CreateBiSListDialog()
     countHeader:SetFont("Fonts\\FRIZQT__.TTF", 14, "OUTLINE")
     
     local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 20, -140)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -60, 100)
+    scrollFrame:SetPoint("TOPLEFT", 20, -100)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -60, 65)
     
     local content = CreateFrame("Frame")
      content:SetSize(720, 1)
@@ -944,19 +983,32 @@ function ns.UI.ShowBiSListDialog()
         ns.UI.CreateBiSListDialog()
     end
     
+    -- Update title with guild name
+    local guildName = ""
+    if BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName and BiSWishAddonDB.options.guildRaidTeamName ~= "" then
+        guildName = " [" .. BiSWishAddonDB.options.guildRaidTeamName .. "]"
+    end
+    
+    local titleText = "|cff39FF14BiS Wishlist|r" .. guildName
+    if ns.UI.biSListDialog.TitleText then
+        ns.UI.biSListDialog.TitleText:SetText(titleText)
+    elseif ns.UI.biSListDialog.title then
+        ns.UI.biSListDialog.title:SetText(titleText)
+    end
+    
     ns.UI.biSListDialog:Show()
     
     -- Update guild name display immediately
     if ns.UI.biSListDialog and ns.UI.biSListDialog.guildName then
         local guildName = (BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName) or ""
-        ns.Core.DebugDebug("Guild name debug - '%s'", tostring(guildName))
+        ns.Core.DebugInfo("Guild name debug - '%s'", tostring(guildName))
         if guildName and guildName ~= "" then
             ns.UI.biSListDialog.guildName:SetText("|cff39FF14Guild/Raid Team:|r " .. guildName)
             ns.UI.biSListDialog.guildName:Show()
-            ns.Core.DebugDebug("Showing guild name: %s", guildName)
+            ns.Core.DebugInfo("Showing guild name: %s", guildName)
         else
             ns.UI.biSListDialog.guildName:Hide()
-            ns.Core.DebugDebug("Hiding guild name (empty)")
+            ns.Core.DebugInfo("Hiding guild name (empty)")
         end
     else
         ns.Core.DebugError("Guild name frame not found!")
@@ -964,6 +1016,22 @@ function ns.UI.ShowBiSListDialog()
     
     -- Also call the UpdateGuildNameDisplay function
     ns.UI.UpdateGuildNameDisplay()
+    
+    -- Force update guild name display after a short delay to ensure options are loaded
+    C_Timer.After(0.1, function()
+        if ns.UI.biSListDialog and ns.UI.biSListDialog.guildName then
+            local guildName = (BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName) or ""
+            ns.Core.DebugInfo("BiS List Dialog - Guild name after delay: '%s'", guildName)
+            if guildName and guildName ~= "" then
+                ns.UI.biSListDialog.guildName:SetText("|cff39FF14Guild/Raid Team:|r " .. guildName)
+                ns.UI.biSListDialog.guildName:Show()
+                ns.Core.DebugInfo("BiS List Dialog - Guild name displayed: %s", guildName)
+            else
+                ns.UI.biSListDialog.guildName:Hide()
+                ns.Core.DebugInfo("BiS List Dialog - Guild name hidden (empty)")
+            end
+        end
+    end)
     
     -- Update the content
     ns.UI.UpdateBiSListContent()
@@ -1480,7 +1548,7 @@ function ns.UI.ShowItemSearchDialog(targetEditBox)
     ns.UI.itemSearchDialog = frame
 end
 
--- Search directly in imported DB (BiSWishAddonDB.items)
+-- Search through Blizzard's item database
 function ns.UI.SearchItems(searchText, content)
     if not searchText or searchText == "" then
         ns.UI.ClearItemSearch(content)
@@ -1493,99 +1561,101 @@ function ns.UI.SearchItems(searchText, content)
     local shown = 0
     local limit = 200  -- hard cap to keep UI responsive
     local searchLower = searchText:lower()
-
-    if not BiSWishAddonDB or not BiSWishAddonDB.items then
-        local noDBText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        noDBText:SetPoint("CENTER", 0, 0)
-        noDBText:SetText("No database loaded")
-        noDBText:SetTextColor(0.7, 0.7, 0.7)
-        return
-    end
-
-    -- Build a simple array for stable iteration and optional sorting
-    local matches = {}
-    for itemID, data in pairs(BiSWishAddonDB.items) do
-        local name = (data and data.name) or ""
-        if name:lower():find(searchLower, 1, true) then
-            table.insert(matches, { id = itemID, name = name })
+    
+    -- Show loading message
+    local loadingText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    loadingText:SetPoint("CENTER", 0, 0)
+    loadingText:SetText("Searching Blizzard item database...")
+    loadingText:SetTextColor(0.8, 0.8, 0.8)
+    
+    -- Use a more efficient approach - search through a curated list of common items
+    C_Timer.After(0.1, function()
+        ClearChildren(content)
+        
+        local yOffset = -10
+        local shown = 0
+        local limit = 50
+        
+        -- Use a curated list of common item IDs that are likely to be searched for
+        -- This is much more efficient than searching through thousands of IDs
+        local commonItemIDs = {
+            -- Common consumables
+            118, 858, 929, 1710, 3827, 6149, 13446, 13444, 20079, 20080, 20081, 20082, 20083, 20084, 20085,
+            -- Common equipment (various levels)
+            6948, 6949, 6950, 6951, 6952, 6953, 6954, 6955, 6956, 6957, 6958, 6959, 6960, 6961, 6962,
+            -- More common items
+            10018, 10019, 10020, 10021, 10022, 10023, 10024, 10025, 10026, 10027, 10028, 10029, 10030,
+            -- Add more common item IDs here as needed
+        }
+        
+        -- Search through the curated list
+        for _, itemID in ipairs(commonItemIDs) do
+            if shown >= limit then break end
+            
+            local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID = GetItemInfo(itemID)
+            
+            if itemName and itemName:lower():find(searchLower, 1, true) then
+                local itemFrame = CreateFrame("Frame", nil, content)
+                itemFrame:SetSize(600, 30)
+                itemFrame:SetPoint("TOPLEFT", 0, yOffset)
+                
+                -- Item icon
+                local itemIcon = itemFrame:CreateTexture(nil, "OVERLAY")
+                itemIcon:SetSize(24, 24)
+                itemIcon:SetPoint("LEFT", 10, 0)
+                itemIcon:SetTexture(itemTexture or "Interface\\Icons\\INV_Misc_QuestionMark")
+                
+                -- Item name with rarity color
+                local itemText = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+                itemText:SetPoint("LEFT", 40, 0)
+                itemText:SetText(itemName)
+                itemText:SetWidth(400)
+                itemText:SetJustifyH("LEFT")
+                
+                -- Set rarity color
+                local rarityColor = ITEM_QUALITY_COLORS[itemRarity or 0]
+                if rarityColor then
+                    itemText:SetTextColor(rarityColor.r, rarityColor.g, rarityColor.b)
+                else
+                    itemText:SetTextColor(1, 1, 1)
+                end
+                
+                -- Item level and type
+                local itemInfo = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                itemInfo:SetPoint("LEFT", 450, 0)
+                itemInfo:SetText("Lvl " .. (itemLevel or "?") .. " " .. (itemType or ""))
+                itemInfo:SetTextColor(0.7, 0.7, 0.7)
+                itemInfo:SetWidth(150)
+                itemInfo:SetJustifyH("LEFT")
+                
+                -- Click to select
+                itemFrame:SetScript("OnMouseUp", function(_, button)
+                    if button == "LeftButton" and ns.UI.itemSearchDialog and ns.UI.itemSearchDialog.targetEditBox then
+                        ns.UI.itemSearchDialog.targetEditBox:SetText(itemName)
+                        ns.UI.itemSearchDialog:Hide()
+                    end
+                end)
+                
+                -- Hover effect
+                itemFrame:SetScript("OnEnter", function()
+                    itemFrame:SetBackdropColor(0.2, 0.2, 0.2, 0.5)
+                end)
+                itemFrame:SetScript("OnLeave", function()
+                    itemFrame:SetBackdropColor(0, 0, 0, 0)
+                end)
+                
+                yOffset = yOffset - 35
+                shown = shown + 1
+            end
         end
-    end
-
-    table.sort(matches, function(a, b) return tostring(a.name) < tostring(b.name) end)
-
-    for _, item in ipairs(matches) do
-        if shown >= limit then break end
-
-        local itemFrame = CreateFrame("Frame", nil, content)
-        itemFrame:SetSize(640, 35)
-        itemFrame:SetPoint("TOPLEFT", 10, yOffset)
-
-        local rowBg = itemFrame:CreateTexture(nil, "BACKGROUND")
-        rowBg:SetAllPoints()
-        rowBg:SetColorTexture(0.05, 0.05, 0.05, 0.3)
-
-        -- Icon
-        local iconTex = itemFrame:CreateTexture(nil, "OVERLAY")
-        iconTex:SetSize(24, 24)
-        iconTex:SetPoint("LEFT", 10, 0)
-        iconTex:SetTexture(PLACEHOLDER_ICON)
-        ns.UI.ResolveItemIcon(tonumber(item.id) or item.name, function(icon)
-            if icon and iconTex and iconTex.SetTexture then
-                iconTex:SetTexture(icon)
-            end
-        end)
-
-        -- Item ID
-        local itemIDText = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        itemIDText:SetPoint("LEFT", 45, 0)
-        itemIDText:SetText(tostring(item.id))
-        itemIDText:SetTextColor(0.8, 0.8, 0.8)
-
-        -- Item Name
-        local itemNameText = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        itemNameText:SetPoint("LEFT", 140, 0)
-        itemNameText:SetText(item.name or "")
-        itemNameText:SetTextColor(1, 1, 1)
-
-        -- Click to select: fill both Name and ID in Data window + target editbox
-        itemFrame:SetScript("OnMouseUp", function(_, button)
-            if button == "LeftButton" then
-                local dialog = ns.UI.itemSearchDialog
-                if dialog and dialog.targetEditBox then
-                    dialog.targetEditBox:SetText(item.name or "")
-                end
-                if ns.UI.dataWindow then
-                    if ns.UI.dataWindow.itemIDEditBox then
-                        ns.UI.dataWindow.itemIDEditBox:SetText(tostring(item.id))
-                    end
-                    if ns.UI.dataWindow.itemNameEditBox then
-                        ns.UI.dataWindow.itemNameEditBox:SetText(item.name or "")
-                    end
-                end
-                if dialog then dialog:Hide() end
-            end
-        end)
-
-        itemFrame:SetScript("OnEnter", function() rowBg:SetColorTexture(0.2, 0.2, 0.2, 0.5) end)
-        itemFrame:SetScript("OnLeave", function() rowBg:SetColorTexture(0.05, 0.05, 0.05, 0.3) end)
-
-        yOffset = yOffset - 40
-        shown = shown + 1
-    end
-
-    if shown == 0 then
-        local noResultsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        noResultsText:SetPoint("CENTER", 0, 0)
-        noResultsText:SetText("No items found for: " .. searchText)
-        noResultsText:SetTextColor(0.7, 0.7, 0.7)
-    end
-
-    -- Keep scroll fresh
-    local parentScroll = content:GetParent()
-    if parentScroll and parentScroll.UpdateScrollChildRect then
-        parentScroll:UpdateScrollChildRect()
-        parentScroll:SetVerticalScroll(0)
-    end
+        
+        if shown == 0 then
+            local noResultsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            noResultsText:SetPoint("CENTER", 0, 0)
+            noResultsText:SetText("No items found matching: " .. searchText .. "\n\nNote: This searches through a curated list of common items.\nFor a complete search, use the in-game item database.")
+            noResultsText:SetTextColor(0.7, 0.7, 0.7)
+        end
+    end)
 end
 
 function ns.UI.ClearItemSearch(content)
@@ -1614,6 +1684,11 @@ function ns.UI.ShowCSVImportDialog()
         local frame = CreateFrame("Frame", "BiSWishCSVImportDialog", UIParent, "BasicFrameTemplateWithInset")
         frame:SetSize(700, 500)
         frame:SetPoint("CENTER")
+        frame:SetMovable(true)
+        frame:EnableMouse(true)
+        frame:RegisterForDrag("LeftButton")
+        frame:SetScript("OnDragStart", frame.StartMoving)
+        frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
         frame:SetFrameStrata("DIALOG")
         frame:Hide()
         

@@ -49,7 +49,7 @@ function ns.Initialize()
     -- Initialize file operations
     ns.File.Initialize()
     
-    -- Initialize options/settings
+    -- Initialize options/settings FIRST to ensure options are available
     ns.Options.Initialize()
     
     -- Initialize slash commands

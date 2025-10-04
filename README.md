@@ -7,7 +7,8 @@ A World of Warcraft addon for managing and tracking Best in Slot (BiS) items for
 - **Track BiS Items**: Create wishlists for your raid group
 - **Import from Spreadsheets**: Copy data from Google Sheets or Excel
 - **Auto-Open on Boss Kills**: Automatically shows your wishlist during guild raids
-- **Guild Integration**: Shows your guild name and tracks raid participation
+- **Guild Integration**: Auto-detects and displays your guild name
+- **Smart Guild Detection**: Automatically fills in your guild name when you open settings
 - **Easy Management**: Add, edit, and remove items with a simple interface
 
 ## 🚀 Quick Start
@@ -23,11 +24,17 @@ A World of Warcraft addon for managing and tracking Best in Slot (BiS) items for
 ### Commands
 - `/bis` - Open your BiS wishlist
 - `/bis help` - Show help
+- `/bis data` - Open data management window
+- `/bis options` - Open settings
+- `/bis testdrop` - Test item drop popup
+- `/bis debug` - Toggle debug mode
+- `/bis debuglevel <1-5>` - Set debug level
 
 ### Settings
 - **General**: Set your guild name and auto-open options
 - **Data Management**: Import CSV data, view items, add items manually
 - **Advanced**: Debug mode for troubleshooting
+- **Auto-Fill Guild Name**: Click the "Auto-fill" button to automatically detect your guild name
 
 ### Importing Data
 1. Format your spreadsheet as: `Player,Trinket 1,Trinket 2,Weapon 1,Weapon 2,Description`
@@ -41,7 +48,9 @@ A World of Warcraft addon for managing and tracking Best in Slot (BiS) items for
 - **Search & Filter**: Find items and players quickly
 - **Tooltips**: Hover over items to see details
 - **Guild Integration**: Auto-opens during guild raids
+- **Auto-Detect Guild**: Automatically detects and fills your guild name
 - **Persistent Data**: All your data is saved between sessions
+- **Debug System**: Built-in debug mode for troubleshooting
 
 ## 🐛 Troubleshooting
 
@@ -57,10 +66,23 @@ A World of Warcraft addon for managing and tracking Best in Slot (BiS) items for
 
 **Guild name not showing?**
 - Go to Settings → BiSWish → General
-- Enter your guild/raid team name
+- Click the "Auto-fill" button next to the guild name field
+- Or manually enter your guild/raid team name
 - The name will appear in your BiS list
 
+**Need help debugging?**
+- Type `/bis debug` to enable debug mode
+- Use `/bis debuglevel <1-5>` to set debug verbosity
+- Check the chat for debug messages
+
 ## 📝 Version History
+
+### Version 1.1
+- Added auto-detect guild name functionality
+- Added "Auto-fill" button for guild name detection
+- Enhanced debug system with configurable levels
+- Improved settings integration
+- Better error handling and user feedback
 
 ### Version 1.0
 - Initial release

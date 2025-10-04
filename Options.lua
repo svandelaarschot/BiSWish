@@ -83,6 +83,15 @@ function ns.Options.Initialize()
         end
     end
     
+    -- Debug: Log current guild name
+    local guildName = BiSWishAddonDB.options.guildRaidTeamName or ""
+    ns.Core.DebugInfo("Options initialized - Guild name: '%s'", guildName)
+    
+    -- Force update any open dialogs after a delay
+    C_Timer.After(0.5, function()
+        ns.Options.UpdateAllGuildNames()
+    end)
+    
     print("|cff39FF14BiSWishAddon|r: Options initialized!")
 end
 
@@ -155,8 +164,86 @@ function ns.Options.RegisterSettings()
         Settings.RegisterCanvasLayoutSubcategory(root, dataPanel, dataPanel.name)
         Settings.RegisterAddOnCategory(root)
         
-        -- Store category reference for commands
-        _G.BiSWishSettingsCategory = root
+    -- Store category reference for commands
+    _G.BiSWishSettingsCategory = root
+    
+    -- Add function to update guild name display when settings are opened
+    function ns.Options.UpdateGuildNameInSettings()
+        -- First, try to auto-detect guild name if not already set
+        local currentGuildName = BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName or ""
+        
+        -- If guild name is not set, try to get it from the player's guild
+        if not currentGuildName or currentGuildName == "" then
+            local playerGuildName = GetGuildInfo("player")
+            if playerGuildName then
+                ns.Core.DebugInfo("Settings - Auto-detected guild name: '%s'", playerGuildName)
+                if not BiSWishAddonDB.options then BiSWishAddonDB.options = {} end
+                BiSWishAddonDB.options.guildRaidTeamName = playerGuildName
+                currentGuildName = playerGuildName
+            else
+                ns.Core.DebugInfo("Settings - No guild detected for player")
+            end
+        end
+        
+        if currentGuildName and currentGuildName ~= "" then
+            ns.Core.DebugInfo("Settings - Updating guild name display: '%s'", currentGuildName)
+            
+            -- Find and update the guild name edit box in the settings panel
+            if _G.BiSWishSettingsCategory and _G.BiSWishSettingsCategory.guildNameEditBox then
+                _G.BiSWishSettingsCategory.guildNameEditBox:SetText(currentGuildName)
+                ns.Core.DebugInfo("Settings - Updated guild name edit box: '%s'", currentGuildName)
+            end
+        end
+    end
+    
+    -- Function to update all guild names in open dialogs
+    function ns.Options.UpdateAllGuildNames()
+        local guildName = BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName or ""
+        ns.Core.DebugInfo("UpdateAllGuildNames - Guild name: '%s'", guildName)
+        
+        -- Update BiS List Dialog if open
+        if ns.UI and ns.UI.biSListDialog and ns.UI.biSListDialog:IsShown() then
+            -- Update title with guild name
+            local titleText = "|cff39FF14BiS Wishlist|r"
+            if guildName and guildName ~= "" then
+                titleText = titleText .. " [" .. guildName .. "]"
+            end
+            if ns.UI.biSListDialog.TitleText then
+                ns.UI.biSListDialog.TitleText:SetText(titleText)
+            elseif ns.UI.biSListDialog.title then
+                ns.UI.biSListDialog.title:SetText(titleText)
+            end
+            
+            ns.UI.UpdateGuildNameDisplay()
+        end
+        
+        -- Update Boss Window if open
+        if ns.UI and ns.UI.bossWindow and ns.UI.bossWindow:IsShown() then
+            local bossName = "Manual View"
+            local titleText = "BiS Wishlist - " .. bossName
+            if guildName and guildName ~= "" then
+                titleText = titleText .. " [" .. guildName .. "]"
+            end
+            if ns.UI.bossWindow.TitleText then
+                ns.UI.bossWindow.TitleText:SetText(titleText)
+            elseif ns.UI.bossWindow.title then
+                ns.UI.bossWindow.title:SetText(titleText)
+            end
+        end
+        
+        -- Update Data Window if open
+        if ns.UI and ns.UI.dataWindow and ns.UI.dataWindow:IsShown() then
+            local titleText = "|cff39FF14BiS Data Management|r"
+            if guildName and guildName ~= "" then
+                titleText = titleText .. " [" .. guildName .. "]"
+            end
+            if ns.UI.dataWindow.TitleText then
+                ns.UI.dataWindow.TitleText:SetText(titleText)
+            elseif ns.UI.dataWindow.title then
+                ns.UI.dataWindow.title:SetText(titleText)
+            end
+        end
+    end
     end
 end
 
@@ -294,9 +381,49 @@ function ns.Options.CreateGuildPanel()
     
     local guildNameEditBox = CreateFrame("EditBox", nil, panel, "InputBoxTemplate")
     guildNameEditBox:SetPoint("TOPLEFT", guildNameLabel, "BOTTOMLEFT", 0, -10)
-    guildNameEditBox:SetSize(300, 30)
+    guildNameEditBox:SetSize(250, 30)
     guildNameEditBox:SetAutoFocus(false)
-    guildNameEditBox:SetText(BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName or "")
+    
+    -- Add refresh button for guild name detection
+    local guildNameRefreshButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    guildNameRefreshButton:SetPoint("LEFT", guildNameEditBox, "RIGHT", 10, 0)
+    guildNameRefreshButton:SetSize(80, 30)
+    guildNameRefreshButton:SetText("Auto-fill")
+    guildNameRefreshButton:SetScript("OnClick", function()
+        local playerGuildName = GetGuildInfo("player")
+        if playerGuildName then
+            guildNameEditBox:SetText(playerGuildName)
+            if not BiSWishAddonDB.options then BiSWishAddonDB.options = {} end
+            BiSWishAddonDB.options.guildRaidTeamName = playerGuildName
+            ns.Core.DebugInfo("Settings - Manually refreshed guild name: '%s'", playerGuildName)
+        else
+            ns.Core.DebugInfo("Settings - No guild detected when refreshing")
+        end
+    end)
+    
+    -- Store reference to the edit box for later updates
+    if _G.BiSWishSettingsCategory then
+        _G.BiSWishSettingsCategory.guildNameEditBox = guildNameEditBox
+    end
+    
+    -- Set initial guild name with auto-detection if not already set
+    local initialGuildName = BiSWishAddonDB.options and BiSWishAddonDB.options.guildRaidTeamName or ""
+    
+    -- If guild name is not set, try to get it from the player's guild
+    if not initialGuildName or initialGuildName == "" then
+        local playerGuildName = GetGuildInfo("player")
+        if playerGuildName then
+            ns.Core.DebugInfo("Settings - Auto-detected guild name during initialization: '%s'", playerGuildName)
+            if not BiSWishAddonDB.options then BiSWishAddonDB.options = {} end
+            BiSWishAddonDB.options.guildRaidTeamName = playerGuildName
+            initialGuildName = playerGuildName
+        else
+            ns.Core.DebugInfo("Settings - No guild detected for player during initialization")
+        end
+    end
+    
+    ns.Core.DebugInfo("Settings - Setting initial guild name: '%s'", initialGuildName)
+    guildNameEditBox:SetText(initialGuildName)
     
     guildNameEditBox:SetScript("OnTextChanged", function(self)
         if not BiSWishAddonDB.options then BiSWishAddonDB.options = {} end
@@ -322,6 +449,20 @@ function ns.Options.CreateGuildPanel()
                 ns.UI.bossWindow.TitleText:SetText(titleText)
             elseif ns.UI.bossWindow.title then
                 ns.UI.bossWindow.title:SetText(titleText)
+            end
+        end
+        
+        -- Also update data management window title if it's open
+        if ns.UI and ns.UI.dataWindow and ns.UI.dataWindow:IsShown() then
+            local guildName = ""
+            if BiSWishAddonDB.options.guildRaidTeamName and BiSWishAddonDB.options.guildRaidTeamName ~= "" then
+                guildName = " [" .. BiSWishAddonDB.options.guildRaidTeamName .. "]"
+            end
+            local titleText = "|cff39FF14BiS Data Management|r" .. guildName
+            if ns.UI.dataWindow.TitleText then
+                ns.UI.dataWindow.TitleText:SetText(titleText)
+            elseif ns.UI.dataWindow.title then
+                ns.UI.dataWindow.title:SetText(titleText)
             end
         end
     end)
