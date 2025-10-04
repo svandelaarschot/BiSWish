@@ -1432,6 +1432,21 @@ function ns.UI.CheckBossKillAutoOpen()
     if not (BiSWishAddonDB and BiSWishAddonDB.options and BiSWishAddonDB.options.autoOpenOnBossKill) then
         return
     end
+    
+    -- Check if we should skip Mythic+ dungeons
+    local skipMythicPlus = BiSWishAddonDB.options and BiSWishAddonDB.options.skipMythicPlus
+    if skipMythicPlus then
+        local inInstance, instanceType = IsInInstance()
+        if instanceType == "party" then
+            local difficultyID = select(3, GetInstanceInfo())
+            if difficultyID == 8 then
+                -- This is a Mythic+ dungeon, don't auto-open
+                ns.Core.DebugInfo("Mythic+ detected, skipping guild raid auto-open")
+                return
+            end
+        end
+    end
+    
     if not IsInRaid() then return end
 
     local myGuild = GetGuildInfo("player")

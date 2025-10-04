@@ -131,15 +131,52 @@ end
 --]]
 function ns.Events.OnEncounterEnd(encounterID, encounterName, difficultyID, groupSize, success)
     if success then
-        print("|cff39FF14BiSWishAddon|r: Boss defeated! Showing BiS data for: " .. encounterName)
-        ns.UI.ShowBossWindow(encounterName)
+        -- Check if we should skip Mythic+ dungeons
+        local skipMythicPlus = BiSWishAddonDB.options and BiSWishAddonDB.options.skipMythicPlus
+        if skipMythicPlus then
+            local inInstance, instanceType = IsInInstance()
+            if instanceType == "party" and difficultyID == 8 then
+                -- This is a Mythic+ dungeon, don't show BiS list or loot tracking
+                ns.Core.DebugInfo("Mythic+ encounter detected, skipping BiS list auto-open")
+                return
+            end
+            
+            -- Check if we're in a regular dungeon (not raid)
+            if instanceType == "party" and difficultyID ~= 8 then
+                -- Regular dungeon, don't show BiS list but allow loot tracking
+                ns.Core.DebugInfo("Regular dungeon encounter detected, skipping BiS list auto-open")
+                return
+            end
+        end
         
-        -- Check if we should auto-open BiS Wishlist for guild raids
-        ns.UI.CheckBossKillAutoOpen()
+        -- Only show BiS list for raids
+        local inInstance, instanceType = IsInInstance()
+        if instanceType == "raid" then
+            print("|cff39FF14BiSWishAddon|r: Boss defeated! Showing BiS data for: " .. encounterName)
+            ns.UI.ShowBossWindow(encounterName)
+            
+            -- Check if we should auto-open BiS Wishlist for guild raids
+            ns.UI.CheckBossKillAutoOpen()
+        end
     end
 end
 
 function ns.Events.OnLootOpened()
+    -- Check if we should skip Mythic+ dungeons
+    local skipMythicPlus = BiSWishAddonDB.options and BiSWishAddonDB.options.skipMythicPlus
+    if skipMythicPlus then
+        local inInstance, instanceType = IsInInstance()
+        if instanceType == "party" then
+            -- We're in a dungeon, check if it's Mythic+
+            local difficultyID = select(3, GetInstanceInfo())
+            if difficultyID == 8 then
+                -- This is a Mythic+ dungeon, don't show loot tracking
+                ns.Core.DebugInfo("Mythic+ loot detected, skipping loot tracking")
+                return
+            end
+        end
+    end
+    
     print("|cff39FF14BiSWishAddon|r: Loot window opened!")
     -- Check for items that players want
     ns.Events.CheckLootForWantedItems()

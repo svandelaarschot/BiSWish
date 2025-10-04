@@ -39,6 +39,7 @@ local defaultOptions = {
     
     -- Display Settings
     autoCloseTime = 30,              -- Auto-close time for item drop popup (seconds)
+    skipMythicPlus = true,           -- Skip auto-open and loot tracking in Mythic+ dungeons
     
     -- Debug Settings
     debugMode = false,               -- Enable debug output
@@ -474,6 +475,33 @@ function ns.Options.CreateGuildPanel()
     guildNameDesc:SetJustifyH("LEFT")
     guildNameDesc:SetText("Enter your guild or raid team name. This will be displayed in the BiS wishlist interface.")
     guildNameDesc:SetTextColor(0.7, 0.7, 0.7)
+    
+    yOffset = yOffset - 80
+    
+    -- Skip Mythic+ checkbox
+    local skipMythicPlusCheckbox = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
+    skipMythicPlusCheckbox:SetPoint("TOPLEFT", 20, yOffset)
+    skipMythicPlusCheckbox:SetSize(20, 20)
+    skipMythicPlusCheckbox:SetChecked(BiSWishAddonDB.options and BiSWishAddonDB.options.skipMythicPlus or true)
+    
+    skipMythicPlusCheckbox:SetScript("OnClick", function(self)
+        if not BiSWishAddonDB.options then BiSWishAddonDB.options = {} end
+        BiSWishAddonDB.options.skipMythicPlus = self:GetChecked()
+        ns.Core.DebugInfo("Skip Mythic+ setting changed to: %s", tostring(self:GetChecked()))
+    end)
+    
+    local skipMythicPlusLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    skipMythicPlusLabel:SetPoint("LEFT", skipMythicPlusCheckbox, "RIGHT", 5, 0)
+    skipMythicPlusLabel:SetText("Skip auto-open and loot tracking in Mythic+ dungeons")
+    skipMythicPlusLabel:SetTextColor(1, 1, 1)
+    
+    -- Skip Mythic+ description
+    local skipMythicPlusDesc = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    skipMythicPlusDesc:SetPoint("TOPLEFT", skipMythicPlusCheckbox, "BOTTOMLEFT", 0, -5)
+    skipMythicPlusDesc:SetWidth(540)
+    skipMythicPlusDesc:SetJustifyH("LEFT")
+    skipMythicPlusDesc:SetText("Prevents the BiS list and loot tracking from appearing during Mythic+ dungeon runs.")
+    skipMythicPlusDesc:SetTextColor(0.7, 0.7, 0.7)
     
     return panel
 end
