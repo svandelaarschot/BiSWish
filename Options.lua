@@ -40,6 +40,7 @@ local defaultOptions = {
     -- Display Settings
     autoCloseTime = 30,              -- Auto-close time for item drop popup (seconds)
     skipMythicPlus = true,           -- Skip auto-open and loot tracking in Mythic+ dungeons
+    disableInDungeons = true,        -- Disable BiS dialog in dungeons (default: off)
     
     -- Debug Settings
     debugMode = false,               -- Enable debug output
@@ -502,6 +503,33 @@ function ns.Options.CreateGuildPanel()
     skipMythicPlusDesc:SetJustifyH("LEFT")
     skipMythicPlusDesc:SetText("Prevents the BiS list and loot tracking from appearing during Mythic+ dungeon runs.")
     skipMythicPlusDesc:SetTextColor(0.7, 0.7, 0.7)
+    
+    yOffset = yOffset - 60
+    
+    -- Disable in dungeons checkbox
+    local disableInDungeonsCheckbox = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
+    disableInDungeonsCheckbox:SetPoint("TOPLEFT", 20, yOffset)
+    disableInDungeonsCheckbox:SetSize(20, 20)
+    disableInDungeonsCheckbox:SetChecked(BiSWishAddonDB.options and BiSWishAddonDB.options.disableInDungeons or true)
+    
+    disableInDungeonsCheckbox:SetScript("OnClick", function(self)
+        if not BiSWishAddonDB.options then BiSWishAddonDB.options = {} end
+        BiSWishAddonDB.options.disableInDungeons = self:GetChecked()
+        ns.Core.DebugInfo("Disable in dungeons setting changed to: %s", tostring(self:GetChecked()))
+    end)
+    
+    local disableInDungeonsLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    disableInDungeonsLabel:SetPoint("LEFT", disableInDungeonsCheckbox, "RIGHT", 5, 0)
+    disableInDungeonsLabel:SetText("Disable BiS dialog in dungeons (including Mythic+)")
+    disableInDungeonsLabel:SetTextColor(1, 1, 1)
+    
+    -- Disable in dungeons description
+    local disableInDungeonsDesc = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    disableInDungeonsDesc:SetPoint("TOPLEFT", disableInDungeonsCheckbox, "BOTTOMLEFT", 0, -5)
+    disableInDungeonsDesc:SetWidth(540)
+    disableInDungeonsDesc:SetJustifyH("LEFT")
+    disableInDungeonsDesc:SetText("Prevents the BiS dialog from opening when using /bis show in dungeons. Recommended for M+ runs.")
+    disableInDungeonsDesc:SetTextColor(0.7, 0.7, 0.7)
     
     return panel
 end

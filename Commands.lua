@@ -204,6 +204,18 @@ end
     Show BiS window
 --]]
 function ns.Commands.ShowWindow()
+    -- Check if we should disable BiS dialog in dungeons
+    local disableInDungeons = BiSWishAddonDB.options and BiSWishAddonDB.options.disableInDungeons
+    if disableInDungeons then
+        local inInstance, instanceType = IsInInstance()
+        if instanceType == "party" then
+            -- We're in a dungeon, check if setting is enabled
+            ns.Core.DebugInfo("In dungeon, BiS dialog disabled by setting")
+            print("|cffFF0000BiSWish|r: BiS dialog is disabled in dungeons. Check your settings to enable it.")
+            return
+        end
+    end
+    
     ns.UI.ShowBossWindow("Manual View")
     ns.Core.DebugInfo("Showing BiS window")
 end
@@ -253,6 +265,18 @@ end
 
 -- Show BiS list dialog
 function ns.Commands.ShowBiSList()
+    -- Check if we should disable BiS dialog in dungeons
+    local disableInDungeons = BiSWishAddonDB.options and BiSWishAddonDB.options.disableInDungeons
+    if disableInDungeons then
+        local inInstance, instanceType = IsInInstance()
+        if instanceType == "party" then
+            -- We're in a dungeon, check if setting is enabled
+            ns.Core.DebugInfo("In dungeon, BiS list dialog disabled by setting")
+            print("|cffFF0000BiSWish|r: BiS list dialog is disabled in dungeons. Check your settings to enable it.")
+            return
+        end
+    end
+    
     ns.UI.ShowBiSListDialog()
     print("|cff39FF14BiSWishAddon|r: Opening BiS list dialog")
 end
