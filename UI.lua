@@ -922,9 +922,7 @@ function ns.UI.CreateBiSListDialog()
             ns.Core.DebugInfo("Guild name hidden (empty)")
         end
     end
-    
-    -- Call immediately
-    ns.UI.UpdateGuildNameDisplay()
+
     
     local searchContainer = CreateFrame("Frame", nil, frame)
     searchContainer:SetSize(760, 40)
